@@ -3,6 +3,7 @@ package com.clarifai.android.starter.api.v2.activity;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
@@ -45,6 +46,8 @@ import org.json.JSONObject;
 
 import rx.functions.Action1;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -325,6 +328,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
+                writeToFile(response);
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
               }},
@@ -397,6 +401,17 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
         requestPermissions(NEW_PERMISSIONS, RESULT_PERMS_INITIAL);
       }
+    }
+  }
+
+  private void writeToFile(String data) {
+    try {
+      OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("response.json", Context.MODE_PRIVATE));
+      outputStreamWriter.write(data);
+      outputStreamWriter.close();
+    }
+    catch (IOException e) {
+      Log.e("Exception", "File write failed: " + e.toString());
     }
   }
 }
