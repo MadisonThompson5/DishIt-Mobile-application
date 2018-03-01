@@ -232,7 +232,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     Map<String, Object> hopperUpdates = new HashMap<>();
 
-    hopperUpdates.put("test",
+    hopperUpdates.put("test25",
             new Indexing(
                     "HelloWorld"
             )
