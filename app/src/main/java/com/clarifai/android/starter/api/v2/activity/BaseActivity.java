@@ -48,6 +48,7 @@ import rx.functions.Action1;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,7 +70,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String TAG = "BaseActivity";
   private String apiKeyUSDA = "cx1fM06Z6s7RK8iMOiFl2nsw9pkDSnG54OtAuEe7";
   private String apiTokenYelp = "9Xfu6IHr38vID5QOuTw0eviQFHjc_F4nr9tg-WYDksOAcECrSbmhw4GyInQKbxUgk0A4YrhTogCRSS6eA8ShwjOClcVI-kC4tT7S6gDNp8UrHjqG3dFv6S4XYs2MWnYx";
-  private String apiKeyWeather = "YOUR_API_KEY";
+  private String nutritionixAppID = "a3f8a39f";
+  private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
   private static final int RESULT_PERMS_INITIAL=1339;
@@ -182,7 +184,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.btnWeather:
-        yelpHttpRequest();
+        //getYelpToken();
+        //yelpHttpRequest();
+        nutritionixHttpRequest();
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -223,13 +227,13 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     httpRequest(url);
   }
 
-  public void requestForWeather() {
-    String latitude = "37.8267";
-    String longitude = "-122.4233";
-    String url = "https://api.darksky.net/forecast/"+apiKeyWeather+"/"+latitude+","+longitude;
-
-    httpRequest(url);
-  }
+//  public void requestForWeather() {
+//    String latitude = "37.8267";
+//    String longitude = "-122.4233";
+//    String url = "https://api.darksky.net/forecast/"+apiKeyWeather+"/"+latitude+","+longitude;
+//
+//    httpRequest(url);
+//  }
 
   public void requestForFireBaseDB() {
     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
@@ -290,8 +294,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         @Override
         public void onResponse(String response) {
           // Display the first 500 characters of the response string.
-          String getResponse = response;
-          Log.e(TAG, "getResponse" + getResponse);
+          apiTokenYelp = response;
+          Log.e(TAG, "getResponse" + apiTokenYelp);
         }},
       new Response.ErrorListener() {
         @Override
@@ -302,8 +306,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
       {
         @Override
-        protected Map<String, String> getParams()
-        {
+        protected Map<String, String> getParams() {
           Map<String, String>  params = new HashMap<String, String>();
           params.put("grant_type", "client_credentials");
           params.put("client_id", "VDTvXteVDWfWtKyXCnFY3w");
@@ -328,7 +331,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile(response);
+                writeToFile("yelp_response.json", response);
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
               }},
@@ -346,6 +349,51 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         params.put("Authorization", "Bearer "+apiTokenYelp);
         return params;
       }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
+  public void nutritionixHttpRequest(){
+    //yelp API call
+    String url = "https://trackapi.nutritionix.com/v2/search/instant?query=panda&brand_ids=513fbc1283aa2dc80c00002e";
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                writeToFile("nutritionix_response.json", response);
+                String getResponse = response;
+                Log.e(TAG, "getResponse" + getResponse);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("x-app-id", nutritionixAppID);
+        params.put("x-app-key", nutritionixAppKey);
+        params.put("x-remote-user-id", "0");
+        return params;
+      }
+
+//      @Override
+//      protected Map<String, String> getParams() {
+//        Map<String, String> params = new HashMap<String, String>();
+//        String[] brand_ids = {"513fbc1283aa2dc80c000005"};
+//        params.put("brand_ids", brand_ids);
+//        return params;
+//      }
     };
 
     // Add the request to the RequestQueue.
@@ -404,9 +452,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     }
   }
 
-  private void writeToFile(String data) {
+  private void writeToFile(String file_name, String data) {
     try {
-      OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("response.json", Context.MODE_PRIVATE));
+      OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(file_name, Context.MODE_PRIVATE));
       outputStreamWriter.write(data);
       outputStreamWriter.close();
     }
