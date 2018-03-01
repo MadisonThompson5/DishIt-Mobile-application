@@ -22,6 +22,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -64,6 +65,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   @BindView(R.id.content_root) protected View root;
   private String TAG = "BaseActivity";
   private String apiKeyUSDA = "cx1fM06Z6s7RK8iMOiFl2nsw9pkDSnG54OtAuEe7";
+  private String apiTokenYelp = "9Xfu6IHr38vID5QOuTw0eviQFHjc_F4nr9tg-WYDksOAcECrSbmhw4GyInQKbxUgk0A4YrhTogCRSS6eA8ShwjOClcVI-kC4tT7S6gDNp8UrHjqG3dFv6S4XYs2MWnYx";
   private String apiKeyWeather = "YOUR_API_KEY";
   private Unbinder unbinder;
 
@@ -177,7 +179,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.btnWeather:
-        requestForWeather();
+        yelpHttpRequest();
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -232,7 +234,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     Map<String, Object> hopperUpdates = new HashMap<>();
 
-    hopperUpdates.put("test25",
+    hopperUpdates.put("test",
             new Indexing(
                     "HelloWorld"
             )
@@ -274,6 +276,77 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
+  public void getYelpToken(){
+    //gets the access token to use yelp API. Might need to get a new token every once in awhile
+    String url = "https://api.yelp.com/oauth2/token";
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+      new Response.Listener<String>() {
+        @Override
+        public void onResponse(String response) {
+          // Display the first 500 characters of the response string.
+          String getResponse = response;
+          Log.e(TAG, "getResponse" + getResponse);
+        }},
+      new Response.ErrorListener() {
+        @Override
+        public void onErrorResponse(VolleyError error) {
+          error.printStackTrace();
+          Log.e(TAG, "Error");
+      }})
+
+      {
+        @Override
+        protected Map<String, String> getParams()
+        {
+          Map<String, String>  params = new HashMap<String, String>();
+          params.put("grant_type", "client_credentials");
+          params.put("client_id", "VDTvXteVDWfWtKyXCnFY3w");
+          params.put("client_secret", "XQwY6uDNSjZu6FXDWhczwNIcJjNFLQAY4IFEFR7mHlF3cn1vnub4Z64DCbkFh9Hw");
+
+          return params;
+        }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
+  public void yelpHttpRequest(){
+    //yelp API call
+    String url = "https://api.yelp.com/v3/businesses/search?term=food&location=boston";
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                String getResponse = response;
+                Log.e(TAG, "getResponse" + getResponse);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("Authorization", "Bearer "+apiTokenYelp);
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
 
   @Override
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
