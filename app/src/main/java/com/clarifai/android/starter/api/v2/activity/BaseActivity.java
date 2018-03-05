@@ -184,8 +184,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        nutritionixLocationRequest("33.645790,-117.842769", "2");
-        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
+        //nutritionixHttpRequest("one cup mashed potatoes");
+        //nutritionixLocationRequest("33.645790,-117.842769", "2");
+        nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -319,8 +320,52 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
+  public void nutritionixHttpRequest(final String query){
+    String url = "https://trackapi.nutritionix.com/v2/natural/nutrients";
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                writeToFile("nutritionix_response.json", response);
+                String getResponse = response;
+                Log.e(TAG, "getResponse" + getResponse);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      protected Map<String,String> getParams(){
+        Map<String,String> params = new HashMap<String, String>();
+        params.put("query",query);
+
+        return params;
+      }
+
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("x-app-id", nutritionixAppID);
+        params.put("x-app-key", nutritionixAppKey);
+        params.put("x-remote-user-id", "0");
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
   public void nutritionixLocationRequest(String coordinates, String distance){
-    //yelp API call
     String url = "https://trackapi.nutritionix.com/v2/locations?";
     url += "ll=" + coordinates + "&";
     url += "distance=" + distance + "mi";
@@ -359,7 +404,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   }
 
   public void nutritionixMealRequest(String query, String brandID){
-    //yelp API call
     String url = "https://trackapi.nutritionix.com/v2/search/instant?";
     url += "query=" + query + "&";
     url += "brand_ids=" + brandID;
