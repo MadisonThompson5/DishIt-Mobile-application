@@ -184,7 +184,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        nutritionixHttpRequest();
+        nutritionixLocationRequest("33.645790,-117.842769", "2");
+        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -231,14 +232,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     httpRequest(url);
   }
-
-//  public void requestForWeather() {
-//    String latitude = "37.8267";
-//    String longitude = "-122.4233";
-//    String url = "https://api.darksky.net/forecast/"+apiKeyWeather+"/"+latitude+","+longitude;
-//
-//    httpRequest(url);
-//  }
 
   public void requestForFireBaseDB() {
     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference()
@@ -326,9 +319,51 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixHttpRequest(){
+  public void nutritionixLocationRequest(String coordinates, String distance){
     //yelp API call
-    String url = "https://trackapi.nutritionix.com/v2/search/instant?query=panda&brand_ids=513fbc1283aa2dc80c00002e";
+    String url = "https://trackapi.nutritionix.com/v2/locations?";
+    url += "ll=" + coordinates + "&";
+    url += "distance=" + distance + "mi";
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                writeToFile("nutritionix_response.json", response);
+                String getResponse = response;
+                Log.e(TAG, "getResponse" + getResponse);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("x-app-id", nutritionixAppID);
+        params.put("x-app-key", nutritionixAppKey);
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
+  public void nutritionixMealRequest(String query, String brandID){
+    //yelp API call
+    String url = "https://trackapi.nutritionix.com/v2/search/instant?";
+    url += "query=" + query + "&";
+    url += "brand_ids=" + brandID;
+
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -357,14 +392,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         params.put("x-remote-user-id", "0");
         return params;
       }
-
-//      @Override
-//      protected Map<String, String> getParams() {
-//        Map<String, String> params = new HashMap<String, String>();
-//        String[] brand_ids = {"513fbc1283aa2dc80c000005"};
-//        params.put("brand_ids", brand_ids);
-//        return params;
-//      }
     };
 
     // Add the request to the RequestQueue.
