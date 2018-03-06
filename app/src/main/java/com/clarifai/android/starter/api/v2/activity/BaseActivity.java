@@ -286,7 +286,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
       for(Object food : foods) {
         JSONObject jsonFood = (JSONObject)food;
-        cal = (double)jsonFood.get("nf_calories");
+        cal = Double.valueOf(jsonFood.get("nf_calories").toString());
       }
 
       Log.e(TAG, "calories: " + String.valueOf(cal));
