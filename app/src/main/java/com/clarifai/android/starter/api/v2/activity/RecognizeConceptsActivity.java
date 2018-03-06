@@ -26,6 +26,7 @@ import com.clarifai.android.starter.api.v2.ClarifaiUtil;
 import com.clarifai.android.starter.api.v2.R;
 import com.clarifai.android.starter.api.v2.adapter.RecognizeConceptsAdapter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,10 +92,10 @@ public final class RecognizeConceptsActivity extends BaseActivity {
     new AsyncTask<Void, Void, ClarifaiResponse<List<ClarifaiOutput<Concept>>>>() {
       @Override protected ClarifaiResponse<List<ClarifaiOutput<Concept>>> doInBackground(Void... params) {
         // The default Clarifai model that identifies concepts in images
-        final ConceptModel generalModel = App.get().clarifaiClient().getDefaultModels().generalModel();
+        final ConceptModel foodModel = App.get().clarifaiClient().getDefaultModels().foodModel();
 
         // Use this model to predict, with the image that the user just selected as the input
-        return generalModel.predict()
+        return foodModel.predict()
             .withInputs(ClarifaiInput.forImage(ClarifaiImage.of(imageBytes)))
             .executeSync();
       }

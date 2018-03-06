@@ -42,8 +42,13 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.tbruyelle.rxpermissions.RxPermissions;
 
 import org.json.JSONException;
-import org.json.JSONObject;
+//import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
+import clarifai2.dto.prediction.Concept;
 import rx.functions.Action1;
 
 import java.io.IOException;
@@ -73,6 +78,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppID = "a3f8a39f";
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
+
+  public static List<Concept> concepts = new ArrayList<>();
+  private String httpResponse = "";
+  private double mealCalories = 0;
 
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
@@ -184,9 +193,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
+        requestForNutritionix();
         //nutritionixHttpRequest("one cup mashed potatoes");
         //nutritionixLocationRequest("33.645790,-117.842769", "2");
-        nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
+        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -258,6 +268,38 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
+  public void requestForNutritionix() {
+    mealCalories = 0;
+    for(int i = 0; i < 5; ++i) {
+      Log.d(TAG, concepts.get(i).name());
+      nutritionixHttpRequest(concepts.get(i).name());
+    }
+  }
+
+  public void calculateCalories() {
+    JSONParser parser = new JSONParser();
+    double cal = 0;
+
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+      JSONArray foods = (JSONArray)jo.get("foods");
+
+      for(Object food : foods) {
+        JSONObject jsonFood = (JSONObject)food;
+        cal = (double)jsonFood.get("nf_calories");
+      }
+
+      Log.e(TAG, "calories: " + String.valueOf(cal));
+    }
+    catch(ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+
+    mealCalories += cal;
+    Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
+  }
+
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -266,7 +308,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
             new Response.Listener<String>() {
               @Override
               public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
+                // Display the first 500 characters of the response string
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
               }
@@ -281,9 +323,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
   }
-
-
-
  
   public void yelpHttpRequest(){
     //yelp API call
@@ -322,7 +361,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   public void nutritionixHttpRequest(final String query){
     String url = "https://trackapi.nutritionix.com/v2/natural/nutrients";
-
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -331,9 +369,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("nutritionix_response.json", response);
-                String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                //writeToFile("nutritionix_response.json", response);
+                httpResponse = response;
+                calculateCalories();
+                Log.e(TAG, "getResponse" + response);
               }},
             new Response.ErrorListener() {
               @Override

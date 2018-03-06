@@ -10,6 +10,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import clarifai2.dto.prediction.Concept;
 import com.clarifai.android.starter.api.v2.R;
+import com.clarifai.android.starter.api.v2.activity.BaseActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ public class RecognizeConceptsAdapter extends RecyclerView.Adapter<RecognizeConc
 
   public RecognizeConceptsAdapter setData(@NonNull List<Concept> concepts) {
     this.concepts = concepts;
+    BaseActivity.concepts = concepts;
     notifyDataSetChanged();
     return this;
   }
