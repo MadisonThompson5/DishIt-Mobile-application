@@ -25,6 +25,10 @@ public class RecognizeConceptsAdapter extends RecyclerView.Adapter<RecognizeConc
     return this;
   }
 
+  public List<Concept> getConcepts() {
+    return concepts;
+  }
+
   @Override public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
     return new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_concept, parent, false));
   }
