@@ -36,6 +36,7 @@ public class GetMealCalories extends AppCompatActivity {
     private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
 
     private ArrayList<String> concepts = new ArrayList<String>();
+    private List<CheckBox> checkBoxes = new ArrayList<CheckBox>();
     private ArrayList<String> selectedConcepts = new ArrayList<String>();
 
     private double mealCalories = 0;
@@ -62,6 +63,7 @@ public class GetMealCalories extends AppCompatActivity {
         for(int i = 0; i < concepts.size(); ++i) {
             CheckBox cb = new CheckBox(getApplicationContext());
             cb.setText(concepts.get(i));
+            checkBoxes.add(cb);
             ll.addView(cb);
         }
 
@@ -74,6 +76,13 @@ public class GetMealCalories extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Log.e(TAG, "button clicked!");
+                selectedConcepts.clear(); //clear list
+                for(int i = 0; i < checkBoxes.size(); ++i) {
+                    CheckBox cb = checkBoxes.get(i);
+                    if(cb.isChecked())
+                        selectedConcepts.add(cb.getText().toString());
+                }
+                Log.e(TAG, selectedConcepts.toString());
             }
         });
 
