@@ -184,15 +184,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        Log.e(TAG, String.valueOf(mealCalories));
+        //Log.e(TAG, String.valueOf(mealCalories));
         //nutritionixLocationRequest("33.645790,-117.842769", "2");
-        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
+        nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
         break;
       case R.id.YelpAPI:
-        yelpHttpRequest();
+        yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
         break;
 
     }
@@ -282,9 +282,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
  
-  public void yelpHttpRequest(){
+  public void yelpHttpRequest(String name, String lat, String lon){
     //yelp API call
-    String url = "https://api.yelp.com/v3/businesses/search?term=food&location=boston";
+    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&open_now=true&";
+    url += "term="+name+"&";
+    url += "latitude="+lat+"&longitude="+lon;
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -356,7 +358,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   }
 
   public void nutritionixMealRequest(String query, String brandID){
-    String url = "https://trackapi.nutritionix.com/v2/search/instant?";
+    String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
     url += "query=" + query + "&";
     url += "brand_ids=" + brandID;
 
