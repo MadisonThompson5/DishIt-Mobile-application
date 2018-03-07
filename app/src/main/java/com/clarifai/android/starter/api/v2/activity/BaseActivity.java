@@ -41,13 +41,6 @@ import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.tbruyelle.rxpermissions.RxPermissions;
 
-import org.json.JSONException;
-//import org.json.JSONObject;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import clarifai2.dto.prediction.Concept;
 import rx.functions.Action1;
 
@@ -79,9 +72,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
-  public static List<Concept> concepts = new ArrayList<>();
-  private String httpResponse = "";
-  private double mealCalories = 0;
+  public static double mealCalories = 0;
 
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
@@ -193,7 +184,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        nutritionixHttpRequest("one cup mashed potatoes");
+        Log.e(TAG, String.valueOf(mealCalories));
         //nutritionixLocationRequest("33.645790,-117.842769", "2");
         //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
@@ -318,51 +309,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       public Map<String, String> getHeaders () throws AuthFailureError {
         Map<String, String> params = new HashMap<String, String>();
         params.put("Authorization", "Bearer "+apiYelp);
-        return params;
-      }
-    };
-
-    // Add the request to the RequestQueue.
-    queue.add(stringRequest);
-  }
-
-  public void nutritionixHttpRequest(final String query){
-    String url = "https://trackapi.nutritionix.com/v2/natural/nutrients";
-    RequestQueue queue = Volley.newRequestQueue(this);
-
-    // Request a string response from the provided URL.
-    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-            new Response.Listener<String>() {
-              @Override
-              public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
-                //writeToFile("nutritionix_response.json", response);
-                httpResponse = response;
-                //calculateCalories();
-                Log.e(TAG, "getResponse" + response);
-              }},
-            new Response.ErrorListener() {
-              @Override
-              public void onErrorResponse(VolleyError error) {
-                error.printStackTrace();
-                Log.e(TAG, "Error");
-              }})
-
-    {
-      @Override
-      protected Map<String,String> getParams(){
-        Map<String,String> params = new HashMap<String, String>();
-        params.put("query",query);
-
-        return params;
-      }
-
-      @Override
-      public Map<String, String> getHeaders () throws AuthFailureError {
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("x-app-id", nutritionixAppID);
-        params.put("x-app-key", nutritionixAppKey);
-        params.put("x-remote-user-id", "0");
         return params;
       }
     };

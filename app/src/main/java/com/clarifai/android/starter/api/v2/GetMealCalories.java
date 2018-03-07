@@ -37,9 +37,9 @@ public class GetMealCalories extends AppCompatActivity {
 
     private ArrayList<String> concepts = new ArrayList<String>();
     private List<CheckBox> checkBoxes = new ArrayList<CheckBox>();
-    private ArrayList<String> selectedConcepts = new ArrayList<String>();
 
     private double mealCalories = 0;
+    private int count = 0;
     private String httpResponse = "";
 
 
@@ -76,25 +76,18 @@ public class GetMealCalories extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Log.e(TAG, "button clicked!");
-                selectedConcepts.clear(); //clear list
+                mealCalories = 0; //reset meal count
                 for(int i = 0; i < checkBoxes.size(); ++i) {
                     CheckBox cb = checkBoxes.get(i);
-                    if(cb.isChecked())
-                        selectedConcepts.add(cb.getText().toString());
+                    if(cb.isChecked()) {
+                        nutritionixHttpRequest(cb.getText().toString());
+                        ++count;
+                    }
                 }
-                Log.e(TAG, selectedConcepts.toString());
             }
         });
 
         this.setContentView(sv);
-    }
-
-    public void requestForNutritionix() {
-        mealCalories = 0;
-        for(int i = 0; i < 5; ++i) {
-            Log.d(TAG, selectedConcepts.get(i));
-            nutritionixHttpRequest(selectedConcepts.get(i));
-        }
     }
 
     public void calculateCalories() {
@@ -118,7 +111,16 @@ public class GetMealCalories extends AppCompatActivity {
         }
 
         mealCalories += cal;
-        Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
+        if(--count > 0)
+            Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
+        else {
+            Log.e(TAG, "final meal total: " + String.valueOf(mealCalories));
+            Intent intent = new Intent();
+            intent.putExtra("mealCount", mealCalories);
+            setResult(RESULT_OK, intent);
+            finish(); //end activity
+        }
+
     }
 
     public void nutritionixHttpRequest(final String query){

@@ -38,6 +38,7 @@ import static android.view.View.VISIBLE;
 public final class RecognizeConceptsActivity extends BaseActivity {
 
   public static final int PICK_IMAGE = 100;
+  public static final int MEAL_COUNT = 0;
   private Context context;
 
   // the list of results that were returned from the API
@@ -83,6 +84,9 @@ public final class RecognizeConceptsActivity extends BaseActivity {
           onImagePicked(imageBytes);
         }
         break;
+      case MEAL_COUNT:
+        double count = data.getDoubleExtra("mealCount", 0);
+        BaseActivity.mealCalories = count;
     }
   }
 
@@ -124,7 +128,7 @@ public final class RecognizeConceptsActivity extends BaseActivity {
           conceptNames.add(concepts.get(i).name());
         }
         intent.putStringArrayListExtra("concepts", conceptNames);
-        startActivity(intent);
+        startActivityForResult(intent, MEAL_COUNT);
       }
 
       private void showErrorSnackbar(@StringRes int errorString) {
