@@ -48,18 +48,22 @@ public class GetMealCalories extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_meal_calories);
 
+        //create View
         ScrollView sv = new ScrollView(this);
         final LinearLayout ll = new LinearLayout(this);
         ll.setOrientation(LinearLayout.VERTICAL);
         sv.addView(ll);
 
+        //get concepts from previous activity
         concepts = getIntent().getStringArrayListExtra("concepts");
         Log.e(TAG, concepts.toString());
 
+        //set text
         TextView tv = new TextView(this);
         tv.setText("Choose the items that are within the meal");
         ll.addView(tv);
 
+        //create a CheckBox for each item in concepts
         for(int i = 0; i < concepts.size(); ++i) {
             CheckBox cb = new CheckBox(getApplicationContext());
             cb.setText(concepts.get(i));
@@ -67,21 +71,25 @@ public class GetMealCalories extends AppCompatActivity {
             ll.addView(cb);
         }
 
+        //set button
         Button b = new Button(this);
         b.setText("Next");
         b.setBottom(10);
         ll.addView(b);
 
+        //button listener
         b.setOnClickListener(new View.OnClickListener() {
+            //what happens when button is clicked
             @Override
             public void onClick(View v) {
                 Log.e(TAG, "button clicked!");
                 mealCalories = 0; //reset meal count
+                //for each CheckBox, check if it was checked, then send that to nutritionix
                 for(int i = 0; i < checkBoxes.size(); ++i) {
                     CheckBox cb = checkBoxes.get(i);
                     if(cb.isChecked()) {
                         nutritionixHttpRequest(cb.getText().toString());
-                        ++count;
+                        ++count; //increase number of checkboxes that were checked
                     }
                 }
             }
@@ -91,6 +99,7 @@ public class GetMealCalories extends AppCompatActivity {
     }
 
     public void calculateCalories() {
+        //parses JSON response for calories, then adds it to the total
         JSONParser parser = new JSONParser();
         double cal = 0;
 
@@ -114,6 +123,7 @@ public class GetMealCalories extends AppCompatActivity {
         if(--count > 0)
             Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
         else {
+            //if finished checking all checkboxes, send mealCalories to BaseActivity and finish()
             Log.e(TAG, "final meal total: " + String.valueOf(mealCalories));
             Intent intent = new Intent();
             intent.putExtra("mealCount", mealCalories);
