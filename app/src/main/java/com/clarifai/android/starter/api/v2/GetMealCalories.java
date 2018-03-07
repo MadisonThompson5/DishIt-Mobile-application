@@ -18,7 +18,8 @@ public class GetMealCalories extends AppCompatActivity {
         setContentView(R.layout.activity_get_meal_calories);
 
         Intent i = getIntent();
-        concepts = i.getStringArrayListExtra("concepts");
-        Log.e(TAG, concepts.get(0));
+        Log.e(TAG, "got to new activity");
+        //concepts = i.getStringArrayListExtra("concepts");
+        //Log.e(TAG, concepts.get(0));
     }
 }

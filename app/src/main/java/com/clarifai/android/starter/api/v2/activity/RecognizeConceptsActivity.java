@@ -1,5 +1,6 @@
 package com.clarifai.android.starter.api.v2.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -37,6 +38,7 @@ import static android.view.View.VISIBLE;
 public final class RecognizeConceptsActivity extends BaseActivity {
 
   public static final int PICK_IMAGE = 100;
+  private Context context;
 
   // the list of results that were returned from the API
   @BindView(R.id.resultsList) RecyclerView resultsList;
@@ -54,6 +56,7 @@ public final class RecognizeConceptsActivity extends BaseActivity {
 
   @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    context = this;
 
   }
 
@@ -114,6 +117,8 @@ public final class RecognizeConceptsActivity extends BaseActivity {
         }
         adapter.setData(predictions.get(0).data());
         imageView.setImageBitmap(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
+        Intent intent = new Intent(context, GetMealCalories.class);
+        startActivity(intent);
       }
 
       private void showErrorSnackbar(@StringRes int errorString) {
