@@ -193,8 +193,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        requestForNutritionix();
-        //nutritionixHttpRequest("one cup mashed potatoes");
+        nutritionixHttpRequest("one cup mashed potatoes");
         //nutritionixLocationRequest("33.645790,-117.842769", "2");
         //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
@@ -268,38 +267,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
-  public void requestForNutritionix() {
-    mealCalories = 0;
-    for(int i = 0; i < 5; ++i) {
-      Log.d(TAG, concepts.get(i).name());
-      nutritionixHttpRequest(concepts.get(i).name());
-    }
-  }
-
-  public void calculateCalories() {
-    JSONParser parser = new JSONParser();
-    double cal = 0;
-
-    try {
-      JSONObject jo = (JSONObject) parser.parse(httpResponse);
-      JSONArray foods = (JSONArray)jo.get("foods");
-
-      for(Object food : foods) {
-        JSONObject jsonFood = (JSONObject)food;
-        cal = Double.valueOf(jsonFood.get("nf_calories").toString());
-      }
-
-      Log.e(TAG, "calories: " + String.valueOf(cal));
-    }
-    catch(ParseException e) {
-      e.printStackTrace();
-      Log.e(TAG, "ParseException");
-    }
-
-    mealCalories += cal;
-    Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
-  }
-
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -371,7 +338,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 // Display the first 500 characters of the response string.
                 //writeToFile("nutritionix_response.json", response);
                 httpResponse = response;
-                calculateCalories();
+                //calculateCalories();
                 Log.e(TAG, "getResponse" + response);
               }},
             new Response.ErrorListener() {

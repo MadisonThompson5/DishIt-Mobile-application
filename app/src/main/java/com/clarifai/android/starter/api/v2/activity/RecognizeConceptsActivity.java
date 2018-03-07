@@ -118,6 +118,12 @@ public final class RecognizeConceptsActivity extends BaseActivity {
         adapter.setData(predictions.get(0).data());
         imageView.setImageBitmap(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
         Intent intent = new Intent(context, GetMealCalories.class);
+        List<Concept> concepts = adapter.getConcepts();
+        ArrayList<String> conceptNames = new ArrayList<String>();
+        for(int i = 0; i < 10; ++i) {
+          conceptNames.add(concepts.get(i).name());
+        }
+        intent.putStringArrayListExtra("concepts", conceptNames);
         startActivity(intent);
       }
 

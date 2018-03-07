@@ -4,22 +4,138 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GetMealCalories extends AppCompatActivity {
 
     private String TAG = "GetMealCalories";
+    private String nutritionixAppID = "a3f8a39f";
+    private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
+
     private ArrayList<String> concepts = new ArrayList<String>();
+    private ArrayList<String> selectedConcepts = new ArrayList<String>();
+
+    private double mealCalories = 0;
+    private String httpResponse = "";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_meal_calories);
 
-        Intent i = getIntent();
-        Log.e(TAG, "got to new activity");
-        //concepts = i.getStringArrayListExtra("concepts");
-        //Log.e(TAG, concepts.get(0));
+        ScrollView sv = new ScrollView(this);
+        final LinearLayout ll = new LinearLayout(this);
+        ll.setOrientation(LinearLayout.VERTICAL);
+        sv.addView(ll);
+
+        concepts = getIntent().getStringArrayListExtra("concepts");
+        Log.e(TAG, concepts.toString());
+
+        for(int i = 0; i < concepts.size(); ++i) {
+            Log.e(TAG, Integer.toString(i));
+            CheckBox cb = new CheckBox(getApplicationContext());
+            cb.setText(concepts.get(i));
+            ll.addView(cb);
+        }
+        this.setContentView(sv);
+    }
+
+    public void requestForNutritionix() {
+        mealCalories = 0;
+        for(int i = 0; i < 5; ++i) {
+            Log.d(TAG, selectedConcepts.get(i));
+            nutritionixHttpRequest(selectedConcepts.get(i));
+        }
+    }
+
+    public void calculateCalories() {
+        JSONParser parser = new JSONParser();
+        double cal = 0;
+
+        try {
+            JSONObject jo = (JSONObject) parser.parse(httpResponse);
+            JSONArray foods = (JSONArray)jo.get("foods");
+
+            for(Object food : foods) {
+                JSONObject jsonFood = (JSONObject)food;
+                cal = Double.valueOf(jsonFood.get("nf_calories").toString());
+            }
+
+            Log.e(TAG, "calories: " + String.valueOf(cal));
+        }
+        catch(ParseException e) {
+            e.printStackTrace();
+            Log.e(TAG, "ParseException");
+        }
+
+        mealCalories += cal;
+        Log.e(TAG, "current meal total: " + String.valueOf(mealCalories));
+    }
+
+    public void nutritionixHttpRequest(final String query){
+        String url = "https://trackapi.nutritionix.com/v2/natural/nutrients";
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        //writeToFile("nutritionix_response.json", response);
+                        httpResponse = response;
+                        calculateCalories();
+                        Log.e(TAG, "getResponse" + response);
+                    }},
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Log.e(TAG, "Error");
+                    }})
+
+        {
+            @Override
+            protected Map<String,String> getParams(){
+                Map<String,String> params = new HashMap<String, String>();
+                params.put("query",query);
+
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders () throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("x-app-id", nutritionixAppID);
+                params.put("x-app-key", nutritionixAppKey);
+                params.put("x-remote-user-id", "0");
+                return params;
+            }
+        };
+
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
     }
 }
