@@ -21,7 +21,6 @@ public class RecognizeConceptsAdapter extends RecyclerView.Adapter<RecognizeConc
 
   public RecognizeConceptsAdapter setData(@NonNull List<Concept> concepts) {
     this.concepts = concepts;
-    BaseActivity.concepts = concepts;
     notifyDataSetChanged();
     return this;
   }

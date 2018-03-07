@@ -1,5 +1,6 @@
 package com.clarifai.android.starter.api.v2.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -23,6 +24,7 @@ import clarifai2.dto.model.output.ClarifaiOutput;
 import clarifai2.dto.prediction.Concept;
 import com.clarifai.android.starter.api.v2.App;
 import com.clarifai.android.starter.api.v2.ClarifaiUtil;
+import com.clarifai.android.starter.api.v2.GetMealCalories;
 import com.clarifai.android.starter.api.v2.R;
 import com.clarifai.android.starter.api.v2.adapter.RecognizeConceptsAdapter;
 
@@ -36,6 +38,8 @@ import static android.view.View.VISIBLE;
 public final class RecognizeConceptsActivity extends BaseActivity {
 
   public static final int PICK_IMAGE = 100;
+  public static final int MEAL_COUNT = 0;
+  private Context context;
 
   // the list of results that were returned from the API
   @BindView(R.id.resultsList) RecyclerView resultsList;
@@ -53,6 +57,7 @@ public final class RecognizeConceptsActivity extends BaseActivity {
 
   @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    context = this;
 
   }
 
@@ -79,6 +84,9 @@ public final class RecognizeConceptsActivity extends BaseActivity {
           onImagePicked(imageBytes);
         }
         break;
+      case MEAL_COUNT:
+        double count = data.getDoubleExtra("mealCount", 0);
+        BaseActivity.mealCalories = count;
     }
   }
 
@@ -113,6 +121,14 @@ public final class RecognizeConceptsActivity extends BaseActivity {
         }
         adapter.setData(predictions.get(0).data());
         imageView.setImageBitmap(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
+        Intent intent = new Intent(context, GetMealCalories.class);
+        List<Concept> concepts = adapter.getConcepts();
+        ArrayList<String> conceptNames = new ArrayList<String>();
+        for(int i = 0; i < 10; ++i) {
+          conceptNames.add(concepts.get(i).name());
+        }
+        intent.putStringArrayListExtra("concepts", conceptNames);
+        startActivityForResult(intent, MEAL_COUNT);
       }
 
       private void showErrorSnackbar(@StringRes int errorString) {
