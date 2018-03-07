@@ -5,9 +5,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -53,12 +55,28 @@ public class GetMealCalories extends AppCompatActivity {
         concepts = getIntent().getStringArrayListExtra("concepts");
         Log.e(TAG, concepts.toString());
 
+        TextView tv = new TextView(this);
+        tv.setText("Choose the items that are within the meal");
+        ll.addView(tv);
+
         for(int i = 0; i < concepts.size(); ++i) {
-            Log.e(TAG, Integer.toString(i));
             CheckBox cb = new CheckBox(getApplicationContext());
             cb.setText(concepts.get(i));
             ll.addView(cb);
         }
+
+        Button b = new Button(this);
+        b.setText("Next");
+        b.setBottom(10);
+        ll.addView(b);
+
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.e(TAG, "button clicked!");
+            }
+        });
+
         this.setContentView(sv);
     }
 
