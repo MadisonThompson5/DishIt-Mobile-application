@@ -46,6 +46,7 @@ import rx.functions.Action1;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +89,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private Food foodItem = new Food();
   public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
   private Restaurant restaurantItem = new Restaurant();
+  private int restaurantCount = 0;
 
 
   private static final int RESULT_PERMS_INITIAL=1339;
@@ -208,7 +210,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFireBaseDB();
         break;
       case R.id.YelpAPI:
-        yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
+        //yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
         break;
 
     }
@@ -274,26 +276,101 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
-  public void linkToYelp(String lat, String lon) {
+  public boolean checkRestaurantList(String n) {
+    //check if a restaurant is already in the restaurant list
+    for (Restaurant restaurant : restaurants) {
+      if(restaurant.name.equals(n))
+        return true;
+    }
+    return false;
+  }
+
+  public void parseNutritionixLocations(String lat, String lon) {
     JSONParser parser = new JSONParser();
     try {
       JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+      //begin parsing JSON response to Nutritionix location search
       JSONArray locations = (JSONArray)jo.get("locations");
 
       for(Object location : locations) {
         JSONObject jsonLocation = (JSONObject)location;
+        restaurantItem = new Restaurant();
         restaurantItem.name = jsonLocation.get("name").toString();
+        //ignore restaurant if already in list
+        if(!checkRestaurantList(restaurantItem.name)) {
+          restaurantItem.brand_id = jsonLocation.get("brand_id").toString();
+          restaurantItem.distanceFromUser = jsonLocation.get("distance_km").toString();
+          Log.e(TAG, restaurantItem.name + " " + restaurantItem.brand_id + " " + restaurantItem.distanceFromUser);
+          restaurants.add(restaurantItem);
+        }
       }
+      linkToYelp(lat, lon);
     }
     catch(ParseException e) {
       e.printStackTrace();
       Log.e(TAG, "ParseException");
     }
-    //nutritionixLocationRequest("33.645790,-117.842769", "2");
-    //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
-    //yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
   }
 
+  public void linkToYelp(String lat, String lon) {
+    //iterate through restaurant list and get Yelp info
+    for (int i = 0; i < restaurants.size(); ++i) {
+      yelpHttpRequest(restaurants.get(i), lat, lon);
+      ++restaurantCount;
+    }
+  }
+
+  public void parseYelpResponse(String brand_id) {
+    //find restaurant to edit
+    for (Restaurant ret : restaurants) {
+      //if found, set variables
+      if (ret.brand_id.equals(brand_id)) {
+        JSONParser parser = new JSONParser();
+        try {
+          JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+          //begin parsing JSON response to Nutritionix location search
+          JSONArray businesses = (JSONArray) jo.get("businesses");
+
+          for (Object business : businesses) {
+            JSONObject jsonBusiness = (JSONObject) business;
+            ret.closed = (boolean) jsonBusiness.get("is_closed");
+
+            //get address from JSONArray of strings
+            JSONObject jsonLocation = (JSONObject) jsonBusiness.get("location");
+            JSONArray jsonAddress = (JSONArray) jsonLocation.get("display_address");
+            for (Object temp : jsonAddress)
+              ret.address += temp.toString() + ",";
+            ret.address = ret.address.substring(0, ret.address.length() - 1);
+
+            ret.price = jsonBusiness.get("price").toString();
+            ret.phoneNumber = jsonBusiness.get("display_phone").toString();
+            ret.rating = Double.valueOf(jsonBusiness.get("rating").toString());
+
+            //get categories from JSONArray of strings
+            JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
+            for (Object temp : jsonCategories) {
+              JSONObject JSONtemp = (JSONObject) temp;
+              String category = JSONtemp.get("title").toString();
+              if(category != null)
+                ret.categories.add(category);
+            }
+          }
+        } catch (ParseException e) {
+          e.printStackTrace();
+          Log.e(TAG, "ParseException");
+        }
+        --restaurantCount;
+        break;
+      }
+    }
+
+    //if restaurantCount is 0, then all restaurants have been updated
+    if(restaurantCount == 0) {
+      Log.e(TAG, restaurants.get(0).phoneNumber);
+    }
+  }
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -318,11 +395,21 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
  
-  public void yelpHttpRequest(String name, String lat, String lon){
+  public void yelpHttpRequest(Restaurant diner, String lat, String lon){
     //yelp API call
-    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&open_now=true&";
+    String name = diner.name;
+    try {
+      name = URLEncoder.encode(name, "UTF-8");
+    } catch (UnsupportedEncodingException ignored) {
+      // Can be safely ignored because UTF-8 is always supported
+    }
+
+    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&";
     url += "term="+name+"&";
     url += "latitude="+lat+"&longitude="+lon;
+
+
+    final String brand_id = diner.brand_id;
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -331,9 +418,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("yelp_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
+
+                parseYelpResponse(brand_id);
               }},
             new Response.ErrorListener() {
               @Override
@@ -372,7 +461,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
 
-                linkToYelp(lat, lon);
+                parseNutritionixLocations(lat, lon);
               }},
             new Response.ErrorListener() {
               @Override

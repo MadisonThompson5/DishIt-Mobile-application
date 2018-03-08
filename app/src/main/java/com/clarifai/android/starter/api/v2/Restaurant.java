@@ -1,15 +1,18 @@
 package com.clarifai.android.starter.api.v2;
 
+import java.util.ArrayList;
+
 public class Restaurant {
     //pull from Nutritionix Location
     public String name;
-    public double brand_id;
-    public double distanceFromUser;
+    public String brand_id;
+    public String distanceFromUser;
 
     //pull from Yelp
+    public boolean closed;
     public String address;
     public String price;
     public double rating;
     public String phoneNumber;
-    public String category;
+    public ArrayList<String> categories;
 }
