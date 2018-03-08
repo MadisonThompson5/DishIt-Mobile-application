@@ -57,6 +57,14 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.INTERNET;
 
+import com.clarifai.android.starter.api.v2.Food; //import custom Food class
+import com.clarifai.android.starter.api.v2.Restaurant; //import custom Restaurant class
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 /**
  * A common class to set up boilerplate logic for
  */
@@ -72,7 +80,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
-  public static double mealCalories = 0;
+  public static double mealCalories = 0;   //total calories of a meal
+  public String httpResponse = ""; //response from httpRequests
+
+  //Food items
+  public ArrayList<Food> foods = new ArrayList<Food>();
+  private Food foodItem = new Food();
+  public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
+  private Restaurant restaurantItem = new Restaurant();
+
 
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
@@ -185,8 +201,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         break;
       case R.id.NutriAPI:
         //Log.e(TAG, String.valueOf(mealCalories));
-        //nutritionixLocationRequest("33.645790,-117.842769", "2");
-        nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
+        nutritionixLocationRequest("33.645790", "-117.842769", "2");
+        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
@@ -258,6 +274,26 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
+  public void linkToYelp(String lat, String lon) {
+    JSONParser parser = new JSONParser();
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+      JSONArray locations = (JSONArray)jo.get("locations");
+
+      for(Object location : locations) {
+        JSONObject jsonLocation = (JSONObject)location;
+        restaurantItem.name = jsonLocation.get("name").toString();
+      }
+    }
+    catch(ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+    //nutritionixLocationRequest("33.645790,-117.842769", "2");
+    //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
+    //yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
+  }
+
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -319,9 +355,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixLocationRequest(String coordinates, String distance){
+  public void nutritionixLocationRequest(final String lat, final String lon, String distance){
     String url = "https://trackapi.nutritionix.com/v2/locations?";
-    url += "ll=" + coordinates + "&";
+    url += "ll=" + lat + "," + lon + "&";
     url += "distance=" + distance + "mi";
 
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -332,9 +368,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("nutritionix_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
+
+                linkToYelp(lat, lon);
               }},
             new Response.ErrorListener() {
               @Override
@@ -370,7 +408,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("nutritionix_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
                 Log.e(TAG, "getResponse" + getResponse);
               }},
