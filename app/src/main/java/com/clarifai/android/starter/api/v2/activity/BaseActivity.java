@@ -12,13 +12,19 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewStub;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -60,7 +66,8 @@ import static android.Manifest.permission.INTERNET;
 /**
  * A common class to set up boilerplate logic for
  */
-public abstract class BaseActivity extends AppCompatActivity implements View.OnClickListener {
+public abstract class BaseActivity extends AppCompatActivity implements View.OnClickListener
+{
 
   private static final String INTENT_EXTRA_DRAWER_POSITION = "IntentExtraDrawerPosition";
 
@@ -74,6 +81,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   public static double mealCalories = 0;
 
+  //private ListView mDrawerList;
+  //private ArrayAdapter<String> mAdapter; //may change
+;
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
   private static final String[] PERMISSIONS={
@@ -131,6 +141,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     // Set the selected index to what the intent said we're in
     drawer.setSelectionAtPosition(getIntent().getIntExtra(INTENT_EXTRA_DRAWER_POSITION, 0));
+
+    //Draw Side bar
+    //mDrawerList = (ListView)findViewById(R.id.navigatorList);
 
     init();
   }
@@ -194,7 +207,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       case R.id.YelpAPI:
         yelpHttpRequest();
         break;
-
     }
   }
 
@@ -424,7 +436,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     }
   }
 
-
   public void requestPermissions() {
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
       List<String> permission_list = new ArrayList<>();
@@ -446,6 +457,12 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     }
   }
 
+  public void menuButton(View v)
+  {
+    Intent n_intent = new Intent(getApplicationContext(), menuActivity.class);
+    startActivity(n_intent);
+  }
+
   private void writeToFile(String file_name, String data) {
     try {
       OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(file_name, Context.MODE_PRIVATE));
@@ -456,4 +473,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       Log.e("Exception", "File write failed: " + e.toString());
     }
   }
+
+
 }
+

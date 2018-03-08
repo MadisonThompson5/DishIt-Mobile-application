@@ -29,7 +29,11 @@
 
         <service android:name=".service.GooglePlayIntentService" />
 
-        <activity android:name=".GetMealCalories"></activity>
+        <activity android:name=".GetMealCalories" />
+        <activity
+            android:name=".activity.menu"
+            android:label="@string/title_activity_menu" />
+        <activity android:name=".activity.menuActivity"></activity>
     </application>
 
 </manifest>
