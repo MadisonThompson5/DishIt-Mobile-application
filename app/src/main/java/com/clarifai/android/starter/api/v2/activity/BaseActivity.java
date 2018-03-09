@@ -87,11 +87,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   //Food items
   public ArrayList<Food> foods = new ArrayList<Food>();
-  private Food foodItem = new Food();
   public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
-  private Restaurant restaurantItem = new Restaurant();
   private int restaurantCount = 0;
-
 
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
@@ -277,16 +274,32 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
+  /*
+  To get this final list, all that needs to be called is nutritionixLocationRequest. In the program,
+  the order of function calls is:
+  nutritionixLocationRequest -> parseNutritionixLocations -> linkToYelp -> parseYelpResponse ->
+  getMealItems -> nutritionixMealRequest -> parseNutritionixMeal
+
+  To get all meal items, nutritionixLocationRequest is called first. After the response is parsed,
+  a request is sent to Yelp to get more info on the restaurants. Finally, once all the restaurant
+  info is gathered, nutritionixMealRequest is called on every restaurant to create a final list
+  containing all the meal items from those restaurants.
+
+  Therefore, foods now contains a list of Food objects that has the food's name, calories, and
+  restaurant info and can now be used to sort recommendations.
+  */
+
   public boolean checkRestaurantList(String n) {
     //check if a restaurant is already in the restaurant list
-    for (Restaurant restaurant : restaurants) {
-      if(restaurant.name.equals(n))
+    for (Restaurant ret : restaurants) {
+      if(ret.name.equals(n))
         return true;
     }
     return false;
   }
 
   public void parseNutritionixLocations(String lat, String lon) {
+    //parses Nutritionix location response for name, brand_id, and distance_km
     JSONParser parser = new JSONParser();
     try {
       JSONObject jo = (JSONObject) parser.parse(httpResponse);
@@ -296,9 +309,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
       for(Object location : locations) {
         JSONObject jsonLocation = (JSONObject)location;
-        restaurantItem = new Restaurant();
+        Restaurant restaurantItem = new Restaurant();
         restaurantItem.name = jsonLocation.get("name").toString();
-        //ignore restaurant if already in list
+
+        //ignore restaurant if already in list to avoid duplicates
         if(!checkRestaurantList(restaurantItem.name)) {
           restaurantItem.brand_id = jsonLocation.get("brand_id").toString();
           restaurantItem.distanceFromUser = jsonLocation.get("distance_km").toString();
@@ -316,17 +330,18 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   public void linkToYelp(String lat, String lon) {
     //iterate through restaurant list and get Yelp info
-    for (int i = 0; i < restaurants.size(); ++i) {
-      yelpHttpRequest(restaurants.get(i), lat, lon);
-      ++restaurantCount;
+    for (Restaurant ret : restaurants) {
+      yelpHttpRequest(ret, lat, lon);
+      ++restaurantCount; //keep track of the number of restaurants to be parsed
     }
   }
 
   public void parseYelpResponse(String brand_id) {
-    //find restaurant to edit
+    //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
+    //first, find restaurant to edit
     for (Restaurant ret : restaurants) {
-      //if found, set variables
       if (ret.brand_id.equals(brand_id)) {
+        //if found, begin adding variables to restaurant
         JSONParser parser = new JSONParser();
         try {
           JSONObject jo = (JSONObject) parser.parse(httpResponse);
@@ -360,7 +375,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
           e.printStackTrace();
           Log.e(TAG, "ParseException");
         }
-        --restaurantCount;
+        --restaurantCount; //subtract a restaurant from the count
         break;
       }
     }
@@ -373,21 +388,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   }
 
   public void getMealItems() {
-    for (int i = 0; i < restaurants.size(); ++i) {
-      Restaurant diner = restaurants.get(i);
-
-      String query = diner.name.toLowerCase();
-      //only get first word of restaurant name
-      if(query.contains(" ")) {
-        query = query.substring(0, query.indexOf(" "));
-      }
-
-      nutritionixMealRequest(query, diner.brand_id, diner);
+    //iterate through restaurant list and get all menu items
+    for (Restaurant ret : restaurants) {
+      nutritionixMealRequest(ret);
       ++restaurantCount;
     }
   }
 
   public void parseNutritionixMeal(Restaurant ret) {
+    //parse Nutritionix search for food_name and calories. Save restaurant to the food as well
     JSONParser parser = new JSONParser();
     try {
       JSONObject jo = (JSONObject) parser.parse(httpResponse);
@@ -397,7 +406,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
       for(Object menuItem : menu) {
         JSONObject jsonItem = (JSONObject)menuItem;
-        foodItem = new Food();
+        Food foodItem = new Food();
         foodItem.name = jsonItem.get("food_name").toString();
         foodItem.calories = jsonItem.get("nf_calories").toString();
         foodItem.place = ret;
@@ -411,12 +420,19 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     }
 
     if(restaurantCount == 0) {
+      //if 0, all restaurants have been iterated. Final food list should be finished
       Log.e(TAG, "Finished getting all meal items");
       for(Food food : foods) {
         Log.e(TAG, food.toString() + "\n" + food.place.toString());
       }
     }
   }
+
+  /*
+  ********
+  Volley requests/API calls
+  ********
+  */
 
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -442,9 +458,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
  
-  public void yelpHttpRequest(Restaurant diner, String lat, String lon){
-    //yelp API call
-    String name = diner.name;
+  public void yelpHttpRequest(Restaurant ret, String lat, String lon){
+    //encode inc case there are spaces in the restaurant name
+    String name = ret.name;
     try {
       name = URLEncoder.encode(name, "UTF-8");
     } catch (UnsupportedEncodingException ignored) {
@@ -455,8 +471,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     url += "term="+name+"&";
     url += "latitude="+lat+"&longitude="+lon;
 
-
-    final String brand_id = diner.brand_id;
+    final String brand_id = ret.brand_id;
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -531,10 +546,17 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixMealRequest(String query, String brandID, final Restaurant ret){
+  public void nutritionixMealRequest(final Restaurant ret){
+    //only get first word of restaurant name
+    String query = ret.name.toLowerCase();
+    if(query.contains(" ")) {
+      query = query.substring(0, query.indexOf(" "));
+    }
+
+    //set url
     String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
     url += "query=" + query + "&";
-    url += "brand_ids=" + brandID;
+    url += "brand_ids=" + ret.brand_id;
 
     RequestQueue queue = Volley.newRequestQueue(this);
 
