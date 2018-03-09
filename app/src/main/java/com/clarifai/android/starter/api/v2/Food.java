@@ -8,4 +8,9 @@ public class Food {
     public String calories;
 
     public Restaurant place;
+
+    @Override
+    public String toString() {
+        return name + ": " + calories;
+    }
 }

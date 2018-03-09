@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -352,9 +353,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
             JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
             for (Object temp : jsonCategories) {
               JSONObject JSONtemp = (JSONObject) temp;
-              String category = JSONtemp.get("title").toString();
-              if(category != null)
-                ret.categories.add(category);
+              ret.categories.add(JSONtemp.get("title").toString());
             }
           }
         } catch (ParseException e) {
@@ -368,9 +367,57 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     //if restaurantCount is 0, then all restaurants have been updated
     if(restaurantCount == 0) {
-      Log.e(TAG, restaurants.get(0).phoneNumber);
+      Log.e(TAG, "Finished getting restaurants, testing: " + restaurants.get(0).categories.toString());
+      getMealItems();
     }
   }
+
+  public void getMealItems() {
+    for (int i = 0; i < restaurants.size(); ++i) {
+      Restaurant diner = restaurants.get(i);
+
+      String query = diner.name.toLowerCase();
+      //only get first word of restaurant name
+      if(query.contains(" ")) {
+        query = query.substring(0, query.indexOf(" "));
+      }
+
+      nutritionixMealRequest(query, diner.brand_id, diner);
+      ++restaurantCount;
+    }
+  }
+
+  public void parseNutritionixMeal(Restaurant ret) {
+    JSONParser parser = new JSONParser();
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+      //begin parsing JSON response to Nutritionix meal search
+      JSONArray menu = (JSONArray)jo.get("branded");
+
+      for(Object menuItem : menu) {
+        JSONObject jsonItem = (JSONObject)menuItem;
+        foodItem = new Food();
+        foodItem.name = jsonItem.get("food_name").toString();
+        foodItem.calories = jsonItem.get("nf_calories").toString();
+        foodItem.place = ret;
+        foods.add(foodItem);
+      }
+      --restaurantCount;
+    }
+    catch(ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+
+    if(restaurantCount == 0) {
+      Log.e(TAG, "Finished getting all meal items");
+      for(Food food : foods) {
+        Log.e(TAG, food.toString() + "\n" + food.place.toString());
+      }
+    }
+  }
+
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -420,7 +467,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 // Display the first 500 characters of the response string.
                 httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "yelp getResponse" + getResponse);
 
                 parseYelpResponse(brand_id);
               }},
@@ -459,7 +506,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 // Display the first 500 characters of the response string.
                 httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "location getResponse" + getResponse);
 
                 parseNutritionixLocations(lat, lon);
               }},
@@ -484,7 +531,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixMealRequest(String query, String brandID){
+  public void nutritionixMealRequest(String query, String brandID, final Restaurant ret){
     String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
     url += "query=" + query + "&";
     url += "brand_ids=" + brandID;
@@ -499,7 +546,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 // Display the first 500 characters of the response string.
                 httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "meal getResponse" + getResponse);
+
+                parseNutritionixMeal(ret);
               }},
             new Response.ErrorListener() {
               @Override

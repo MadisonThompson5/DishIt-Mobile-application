@@ -14,5 +14,10 @@ public class Restaurant {
     public String price;
     public double rating;
     public String phoneNumber;
-    public ArrayList<String> categories;
+    public ArrayList<String> categories = new ArrayList<String>();
+
+    @Override
+    public String toString() {
+        return name + ": " + "rating:" + rating + ", categories:" + categories.toString();
+    }
 }
