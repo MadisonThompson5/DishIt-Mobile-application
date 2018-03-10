@@ -342,6 +342,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               }})
 
     {
+
       @Override
       public Map<String, String> getHeaders () throws AuthFailureError {
         Map<String, String> params = new HashMap<String, String>();
@@ -356,10 +357,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   }
 
   public void FitbitAPIRequest() {
-    String token_url = "https://api.fitbit.com/oauth2/token";
+    String auth_uri = "https://www.fitbit.com/oauth2/authorize";
     RequestQueue queue = Volley.newRequestQueue(this);
 
-    StringRequest stringRequest = new StringRequest(Request.Method.POST, token_url,
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, auth_uri,
             new Response.Listener<String>() {
               @Override
               public void onResponse(String response) {
@@ -376,12 +377,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     {
       @Override
-      protected Map<String, String> getParams()
+      public Map<String, String> getHeaders () throws AuthFailureError
       {
         Map<String, String>  params = new HashMap<String, String>();
         params.put("grant_type", "authorization_code");
         params.put("client_id", "22CNGM");
-        params.put("code", "4d4d35459d7dcc91099b54dc77b19bd2");
+        params.put("scope", "activity");
+        params.put("response_type", "code");
+        params.put("redirect_uri", "https://finished");
+        params.put("expires_in", "31536000");
 
         return params;
       }
