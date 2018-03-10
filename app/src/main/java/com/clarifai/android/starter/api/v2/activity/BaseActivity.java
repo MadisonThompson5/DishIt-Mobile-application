@@ -82,6 +82,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
+  public double calorieLimit = 2000;
+
   public static double mealCalories = 0;   //total calories of a meal
   public String httpResponse = ""; //response from httpRequests
 
@@ -390,8 +392,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   public void getMealItems() {
     //iterate through restaurant list and get all menu items
     for (Restaurant ret : restaurants) {
-      nutritionixMealRequest(ret);
-      ++restaurantCount;
+      if(!ret.closed) { //don't add restaurant to list if closed
+        nutritionixMealRequest(ret);
+        ++restaurantCount;
+      }
     }
   }
 
@@ -408,9 +412,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         JSONObject jsonItem = (JSONObject)menuItem;
         Food foodItem = new Food();
         foodItem.name = jsonItem.get("food_name").toString();
-        foodItem.calories = jsonItem.get("nf_calories").toString();
+        foodItem.calories = Double.valueOf(jsonItem.get("nf_calories").toString());
         foodItem.place = ret;
-        foods.add(foodItem);
+        //only add foodItem if it falls within the user's calorie limit
+        if(foodItem.calories >= (calorieLimit - mealCalories))
+          foods.add(foodItem);
       }
       --restaurantCount;
     }

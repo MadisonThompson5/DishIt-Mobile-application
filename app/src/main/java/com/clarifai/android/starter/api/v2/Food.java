@@ -5,7 +5,7 @@ public class Food {
 
     //pull from Nutritionix Search/Instant
     public String name;
-    public String calories;
+    public double calories;
 
     public Restaurant place;
 
