@@ -359,7 +359,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     String token_url = "https://api.fitbit.com/oauth2/token";
     RequestQueue queue = Volley.newRequestQueue(this);
 
-    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, token_url,
             new Response.Listener<String>() {
               @Override
               public void onResponse(String response) {
@@ -379,9 +379,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       protected Map<String, String> getParams()
       {
         Map<String, String>  params = new HashMap<String, String>();
-        params.put("grant_type", "client_credentials");
+        params.put("grant_type", "authorization_code");
         params.put("client_id", "22CNGM");
-        params.put("client_secret", "4d4d35459d7dcc91099b54dc77b19bd2");
+        params.put("code", "4d4d35459d7dcc91099b54dc77b19bd2");
 
         return params;
       }
