@@ -109,10 +109,10 @@
         android:layout_height="70dp"
         android:orientation="horizontal">
       <Button
-          android:id="@+id/YelpAPI"
+          android:id="@+id/FitbitAPI"
           android:layout_width="100dp"
           android:layout_height="match_parent"
-          android:text="YelpAPI"/>
+          android:text="FitbitAPI"/>
 
 
     </LinearLayout>

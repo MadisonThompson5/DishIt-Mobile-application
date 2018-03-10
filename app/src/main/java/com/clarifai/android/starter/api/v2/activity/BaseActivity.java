@@ -87,23 +87,23 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     super.onCreate(savedInstanceState);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       RxPermissions.getInstance(this)
-          .request(Manifest.permission.READ_EXTERNAL_STORAGE)
-          .subscribe(new Action1<Boolean>() {
-            @Override public void call(Boolean granted) {
-              if (!granted) {
-                new AlertDialog.Builder(BaseActivity.this)
-                    .setCancelable(false)
-                    .setMessage(R.string.error_external_storage_permission_not_granted)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                      @Override public void onClick(DialogInterface dialog, int which) {
-                        moveTaskToBack(true);
-                        finish();
-                      }
-                    })
-                    .show();
-              }
-            }
-          });
+              .request(Manifest.permission.READ_EXTERNAL_STORAGE)
+              .subscribe(new Action1<Boolean>() {
+                @Override public void call(Boolean granted) {
+                  if (!granted) {
+                    new AlertDialog.Builder(BaseActivity.this)
+                            .setCancelable(false)
+                            .setMessage(R.string.error_external_storage_permission_not_granted)
+                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                              @Override public void onClick(DialogInterface dialog, int which) {
+                                moveTaskToBack(true);
+                                finish();
+                              }
+                            })
+                            .show();
+                  }
+                }
+              });
     }
 
     @SuppressLint("InflateParams") final View wrapper = getLayoutInflater().inflate(R.layout.activity_wrapper, null);
@@ -116,10 +116,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     final Toolbar toolbar = ButterKnife.findById(this, R.id.toolbar);
 
     final Drawer drawer = new DrawerBuilder()
-        .withActivity(this)
-        .withToolbar(toolbar)
-        .withDrawerItems(drawerItems())
-        .build();
+            .withActivity(this)
+            .withToolbar(toolbar)
+            .withDrawerItems(drawerItems())
+            .build();
 
     // Show the "hamburger"
     setSupportActionBar(toolbar);
@@ -147,9 +147,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   @NonNull
   protected List<IDrawerItem> drawerItems() {
     return Arrays.<IDrawerItem>asList(
-        new PrimaryDrawerItem()
-            .withName(R.string.drawer_item_recognize_tags)
-            .withOnDrawerItemClickListener(goToActivityListener(RecognizeConceptsActivity.class))
+            new PrimaryDrawerItem()
+                    .withName(R.string.drawer_item_recognize_tags)
+                    .withOnDrawerItemClickListener(goToActivityListener(RecognizeConceptsActivity.class))
     );
   }
 
@@ -161,7 +161,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   protected abstract int layoutRes();
 
   private Drawer.OnDrawerItemClickListener goToActivityListener(
-      @NonNull final Class<? extends Activity> activityClass) {
+          @NonNull final Class<? extends Activity> activityClass) {
     return new Drawer.OnDrawerItemClickListener() {
       @Override
       public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
@@ -191,8 +191,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
         break;
-      case R.id.YelpAPI:
-        yelpHttpRequest();
+      case R.id.FitbitAPI:
+        FitbitAPIRequest();
         break;
 
     }
@@ -202,7 +202,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     findViewById(R.id.btnFoodSearch).setOnClickListener(this);
     findViewById(R.id.btnFoodInfo).setOnClickListener(this);
     findViewById(R.id.btnFirebaseDB).setOnClickListener(this);
-    findViewById(R.id.YelpAPI).setOnClickListener(this);
+    findViewById(R.id.FitbitAPI).setOnClickListener(this);
     findViewById(R.id.NutriAPI).setOnClickListener(this);
 
 
@@ -281,7 +281,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
   }
- 
+
   public void yelpHttpRequest(){
     //yelp API call
     String url = "https://api.yelp.com/v3/businesses/search?term=food&location=boston";
@@ -353,6 +353,43 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
+  }
+
+  public void FitbitAPIRequest() {
+    String token_url = "https://api.fitbit.com/oauth2/token";
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                String getResponse = response;
+                Log.e(TAG, "getResponse" + getResponse);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      protected Map<String, String> getParams()
+      {
+        Map<String, String>  params = new HashMap<String, String>();
+        params.put("grant_type", "client_credentials");
+        params.put("client_id", "22CNGM");
+        params.put("client_secret", "4d4d35459d7dcc91099b54dc77b19bd2");
+
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+
   }
 
   public void nutritionixMealRequest(String query, String brandID){
