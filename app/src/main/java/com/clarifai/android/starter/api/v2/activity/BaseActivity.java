@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Debug;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -52,6 +53,7 @@ import rx.functions.Action1;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +64,14 @@ import java.util.Map;
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.INTERNET;
+
+import com.clarifai.android.starter.api.v2.Food; //import custom Food class
+import com.clarifai.android.starter.api.v2.Restaurant; //import custom Restaurant class
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * A common class to set up boilerplate logic for
@@ -79,7 +89,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
-  public static double mealCalories = 0;
+  public double calorieLimit = 2000;
+
+  public static double mealCalories = 0;   //total calories of a meal
+  public String httpResponse = ""; //response from httpRequests
+
+  //Food items
+  public ArrayList<Food> foods = new ArrayList<Food>();
+  public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
+  private int restaurantCount = 0;
 
   //private ListView mDrawerList;
   //private ArrayAdapter<String> mAdapter; //may change
@@ -197,15 +215,15 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         requestForFoodInfo();
         break;
       case R.id.NutriAPI:
-        Log.e(TAG, String.valueOf(mealCalories));
-        //nutritionixLocationRequest("33.645790,-117.842769", "2");
+        //Log.e(TAG, String.valueOf(mealCalories));
+        nutritionixLocationRequest("33.645790", "-117.842769", "2");
         //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
         break;
       case R.id.btnFirebaseDB:
         requestForFireBaseDB();
         break;
       case R.id.YelpAPI:
-        yelpHttpRequest();
+        //yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
         break;
     }
   }
@@ -270,6 +288,170 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     });
   }
 
+  /*
+  To get this final list, all that needs to be called is nutritionixLocationRequest. In the program,
+  the order of function calls is:
+  nutritionixLocationRequest -> parseNutritionixLocations -> linkToYelp -> parseYelpResponse ->
+  getMealItems -> nutritionixMealRequest -> parseNutritionixMeal
+
+  To get all meal items, nutritionixLocationRequest is called first. After the response is parsed,
+  a request is sent to Yelp to get more info on the restaurants. Finally, once all the restaurant
+  info is gathered, nutritionixMealRequest is called on every restaurant to create a final list
+  containing all the meal items from those restaurants.
+
+  Therefore, foods now contains a list of Food objects that has the food's name, calories, and
+  restaurant info and can now be used to sort recommendations.
+  */
+
+  public boolean checkRestaurantList(String n) {
+    //check if a restaurant is already in the restaurant list
+    for (Restaurant ret : restaurants) {
+      if(ret.name.equals(n))
+        return true;
+    }
+    return false;
+  }
+
+  public void parseNutritionixLocations(String lat, String lon) {
+    //parses Nutritionix location response for name, brand_id, and distance_km
+    JSONParser parser = new JSONParser();
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+      //begin parsing JSON response to Nutritionix location search
+      JSONArray locations = (JSONArray)jo.get("locations");
+
+      for(Object location : locations) {
+        JSONObject jsonLocation = (JSONObject)location;
+        Restaurant restaurantItem = new Restaurant();
+        restaurantItem.name = jsonLocation.get("name").toString();
+
+        //ignore restaurant if already in list to avoid duplicates
+        if(!checkRestaurantList(restaurantItem.name)) {
+          restaurantItem.brand_id = jsonLocation.get("brand_id").toString();
+          restaurantItem.distanceFromUser = jsonLocation.get("distance_km").toString();
+          Log.e(TAG, restaurantItem.name + " " + restaurantItem.brand_id + " " + restaurantItem.distanceFromUser);
+          restaurants.add(restaurantItem);
+        }
+      }
+      linkToYelp(lat, lon);
+    }
+    catch(ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+  }
+
+  public void linkToYelp(String lat, String lon) {
+    //iterate through restaurant list and get Yelp info
+    for (Restaurant ret : restaurants) {
+      yelpHttpRequest(ret, lat, lon);
+      ++restaurantCount; //keep track of the number of restaurants to be parsed
+    }
+  }
+
+  public void parseYelpResponse(String brand_id) {
+    //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
+    //first, find restaurant to edit
+    for (Restaurant ret : restaurants) {
+      if (ret.brand_id.equals(brand_id)) {
+        //if found, begin adding variables to restaurant
+        JSONParser parser = new JSONParser();
+        try {
+          JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+          //begin parsing JSON response to Nutritionix location search
+          JSONArray businesses = (JSONArray) jo.get("businesses");
+
+          for (Object business : businesses) {
+            JSONObject jsonBusiness = (JSONObject) business;
+            ret.closed = (boolean) jsonBusiness.get("is_closed");
+
+            //get address from JSONArray of strings
+            JSONObject jsonLocation = (JSONObject) jsonBusiness.get("location");
+            JSONArray jsonAddress = (JSONArray) jsonLocation.get("display_address");
+            for (Object temp : jsonAddress)
+              ret.address += temp.toString() + ",";
+            ret.address = ret.address.substring(0, ret.address.length() - 1);
+
+            ret.price = jsonBusiness.get("price").toString();
+            ret.phoneNumber = jsonBusiness.get("display_phone").toString();
+            ret.rating = Double.valueOf(jsonBusiness.get("rating").toString());
+
+            //get categories from JSONArray of strings
+            JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
+            for (Object temp : jsonCategories) {
+              JSONObject JSONtemp = (JSONObject) temp;
+              ret.categories.add(JSONtemp.get("title").toString());
+            }
+          }
+        } catch (ParseException e) {
+          e.printStackTrace();
+          Log.e(TAG, "ParseException");
+        }
+        --restaurantCount; //subtract a restaurant from the count
+        break;
+      }
+    }
+
+    //if restaurantCount is 0, then all restaurants have been updated
+    if(restaurantCount == 0) {
+      Log.e(TAG, "Finished getting restaurants, testing: " + restaurants.get(0).categories.toString());
+      getMealItems();
+    }
+  }
+
+  public void getMealItems() {
+    //iterate through restaurant list and get all menu items
+    for (Restaurant ret : restaurants) {
+      if(!ret.closed) { //don't add restaurant to list if closed
+        nutritionixMealRequest(ret);
+        ++restaurantCount;
+      }
+    }
+  }
+
+  public void parseNutritionixMeal(Restaurant ret) {
+    //parse Nutritionix search for food_name and calories. Save restaurant to the food as well
+    JSONParser parser = new JSONParser();
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+      //begin parsing JSON response to Nutritionix meal search
+      JSONArray menu = (JSONArray)jo.get("branded");
+
+      for(Object menuItem : menu) {
+        JSONObject jsonItem = (JSONObject)menuItem;
+        Food foodItem = new Food();
+        foodItem.name = jsonItem.get("food_name").toString();
+        foodItem.calories = Double.valueOf(jsonItem.get("nf_calories").toString());
+        foodItem.place = ret;
+        //only add foodItem if it falls within the user's calorie limit
+        if(foodItem.calories >= (calorieLimit - mealCalories))
+          foods.add(foodItem);
+      }
+      --restaurantCount;
+    }
+    catch(ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+
+    if(restaurantCount == 0) {
+      //if 0, all restaurants have been iterated. Final food list should be finished
+      Log.e(TAG, "Finished getting all meal items");
+      for(Food food : foods) {
+        Log.e(TAG, food.toString() + "\n" + food.place.toString());
+      }
+    }
+  }
+
+  /*
+  ********
+  Volley requests/API calls
+  ********
+  */
+
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -294,9 +476,20 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
  
-  public void yelpHttpRequest(){
-    //yelp API call
-    String url = "https://api.yelp.com/v3/businesses/search?term=food&location=boston";
+  public void yelpHttpRequest(Restaurant ret, String lat, String lon){
+    //encode inc case there are spaces in the restaurant name
+    String name = ret.name;
+    try {
+      name = URLEncoder.encode(name, "UTF-8");
+    } catch (UnsupportedEncodingException ignored) {
+      // Can be safely ignored because UTF-8 is always supported
+    }
+
+    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&";
+    url += "term="+name+"&";
+    url += "latitude="+lat+"&longitude="+lon;
+
+    final String brand_id = ret.brand_id;
     RequestQueue queue = Volley.newRequestQueue(this);
 
     // Request a string response from the provided URL.
@@ -305,9 +498,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("yelp_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "yelp getResponse" + getResponse);
+
+                parseYelpResponse(brand_id);
               }},
             new Response.ErrorListener() {
               @Override
@@ -329,9 +524,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixLocationRequest(String coordinates, String distance){
+  public void nutritionixLocationRequest(final String lat, final String lon, String distance){
     String url = "https://trackapi.nutritionix.com/v2/locations?";
-    url += "ll=" + coordinates + "&";
+    url += "ll=" + lat + "," + lon + "&";
     url += "distance=" + distance + "mi";
 
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -342,9 +537,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("nutritionix_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "location getResponse" + getResponse);
+
+                parseNutritionixLocations(lat, lon);
               }},
             new Response.ErrorListener() {
               @Override
@@ -367,10 +564,17 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  public void nutritionixMealRequest(String query, String brandID){
-    String url = "https://trackapi.nutritionix.com/v2/search/instant?";
+  public void nutritionixMealRequest(final Restaurant ret){
+    //only get first word of restaurant name
+    String query = ret.name.toLowerCase();
+    if(query.contains(" ")) {
+      query = query.substring(0, query.indexOf(" "));
+    }
+
+    //set url
+    String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
     url += "query=" + query + "&";
-    url += "brand_ids=" + brandID;
+    url += "brand_ids=" + ret.brand_id;
 
     RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -380,9 +584,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
               @Override
               public void onResponse(String response) {
                 // Display the first 500 characters of the response string.
-                writeToFile("nutritionix_response.json", response);
+                httpResponse = response;
                 String getResponse = response;
-                Log.e(TAG, "getResponse" + getResponse);
+                Log.e(TAG, "meal getResponse" + getResponse);
+
+                parseNutritionixMeal(ret);
               }},
             new Response.ErrorListener() {
               @Override
