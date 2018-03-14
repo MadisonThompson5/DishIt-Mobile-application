@@ -1,5 +1,7 @@
 package com.clarifai.android.starter.api.v2;
 
+import java.util.Comparator;
+
 public class Food {
     //class that holds variables received from requests to Nutritionix and Yelp
 
@@ -13,4 +15,5 @@ public class Food {
     public String toString() {
         return name + ": " + calories;
     }
+
 }
