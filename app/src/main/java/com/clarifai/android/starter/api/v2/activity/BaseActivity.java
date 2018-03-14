@@ -574,11 +574,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         ret.rating = to_double(to_string(jsonBusiness, "rating"));
         ret.distanceFromUser = to_double(to_string(jsonBusiness, "distance"));
         ret.phoneDisplay = to_string(jsonBusiness, "display_phone");
-//        ret.price = jsonBusiness.get("price").toString();
-//        ret.phoneNumber = jsonBusiness.get("phone").toString();
-//        ret.rating = Double.valueOf(jsonBusiness.get("rating").toString());
-//        ret.distanceFromUser = Double.valueOf(jsonBusiness.get("distance").toString());
-//        ret.phoneDisplay = jsonBusiness.get("display_phone").toString();
 
         //get categories from JSONArray of strings
         JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
@@ -612,7 +607,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       }
 
       //filter for rating  < 3.0
-      if (!temp.closed && temp.rating >= 3.0) { //don't add restaurant to list if closed
+      if (!temp.closed && temp.rating >= 2.5 && !temp.categories.contains("Coffee & Tea")) { //don't add restaurant to list if closed
         nutritionixMealRequest(temp);
         ++restaurantCount;
       }
@@ -686,7 +681,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         foodItem.calories = to_double(to_string(jsonItem,"nf_calories"));
         foodItem.place = ret;
         //only add foodItem if it falls within the user's calorie limit
-        if(foodItem.calories <= (calorieLimit - mealCalories))
+        if(foodItem.calories >= 250 && foodItem.calories <= (calorieLimit - mealCalories))
           foods.add(foodItem);
       }
       --restaurantCount;
@@ -713,12 +708,23 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       sortByDistance(foods);
       sortByPreferences(foods, food_preferences);
 
-      for (Food f: foods)
-      {
-        print_food(f);
-        System.out.printf("\tDistance: %f\n", f.place.distanceFromUser);
+
+      try {
+        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("test_recommendations.txt", Context.MODE_PRIVATE));
+
+        for (Food f : foods) {
+          String s = String.format("Name: %s\n\tCal: %f\n\t", f.name, f.calories);
+          Restaurant r = f.place;
+          s += String.format("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneDisplay, String.valueOf(r.rating));
+          s += String.format("\n\tDistance: %f\n\n", f.place.distanceFromUser);
+          outputStreamWriter.write(s);
+        }
+        System.out.println("Finished\n");
+        outputStreamWriter.close();
       }
-      System.out.println("Finished\n");
+      catch (IOException e) {
+        Log.e("Exception", "File write failed: " + e.toString());
+      }
 
 
     }
