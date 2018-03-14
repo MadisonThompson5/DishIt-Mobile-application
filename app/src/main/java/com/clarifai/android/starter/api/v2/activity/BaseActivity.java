@@ -379,7 +379,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
           restaurantItem.brand_id = to_string(jsonLocation, "brand_id");
           restaurantItem.distanceFromUser = to_double(to_string(jsonLocation, "distance_km")) * 1000;
           restaurantItem.phoneNumber = to_string(jsonLocation, "phone");
-
+          restaurantItem.phoneDisplay = restaurantItem.phoneNumber;
           Log.e(TAG, restaurantItem.name + " " + restaurantItem.brand_id + " " + restaurantItem.distanceFromUser);
           restaurants.add(restaurantItem);
         }
@@ -611,7 +611,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         update_ret(temp, yelpBusinesses.get(index));
       }
 
-      if (!temp.closed) { //don't add restaurant to list if closed
+      //filter for rating  < 3.0
+      if (!temp.closed && temp.rating >= 3.0) { //don't add restaurant to list if closed
         nutritionixMealRequest(temp);
         ++restaurantCount;
       }
@@ -643,6 +644,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
                 httpResponse = response;
                 String getResponse = response;
                 Log.e(TAG, "meal getResponse" + getResponse);
+                writeToFile("Nutri items.txt", getResponse);
 
                 parseNutritionixMeal(ret);
               }},
@@ -700,19 +702,24 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       for(Food food : foods) {
         Log.e(TAG, food.toString() + "\n" + food.place.toString());
       }
-      //System.out.println("Finished\n");
 
-      for (Restaurant r : restaurants)
-        print_ret(r);
-      //huu
-      //System.out.print("Fininshed\nFood list:\n");
-//
-//      food_preferences.add("Fast Food");
-//      food_preferences.add("Sandwiches");
-//      food_preferences.add("Pizza");
-//
-//      sortByPreferences(foods, food_preferences);
-//      printList(foods);
+      //Huu testing.
+      //food_preferences is for testing only
+      food_preferences.add("Fast Food");
+      food_preferences.add("Sandwiches");
+      food_preferences.add("Pizza");
+
+      sortByCalories(foods);
+      sortByDistance(foods);
+      sortByPreferences(foods, food_preferences);
+
+      for (Food f: foods)
+      {
+        print_food(f);
+        System.out.printf("\tDistance: %f\n", f.place.distanceFromUser);
+      }
+      System.out.println("Finished\n");
+
 
     }
   }
@@ -823,7 +830,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         int c1, c2;
         c1 = countPreferences(o1, preferences);
         c2 = countPreferences(o2, preferences);
-        return c1 - c2;
+        return c2 - c1;
       }
     });
   }
@@ -835,6 +842,38 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
         count++;
     }
     return count;
+  }
+
+  public void sortByDistance(ArrayList<Food> fl)
+  {
+    Collections.sort(fl, new Comparator<Food>() {
+      @Override
+      public int compare(Food o1, Food o2) {
+        int d1, d2;
+        d1 = (int)(o1.place.distanceFromUser * 1000);
+        d2 = (int)(o2.place.distanceFromUser * 1000);
+        return d1 -d2;
+      }
+    });
+  }
+
+  public void sortByCalories(ArrayList<Food> fl)
+  {
+    Collections.sort(fl, new Comparator<Food>() {
+      @Override
+      public int compare(Food o1, Food o2) {
+        return (int)(o1.calories - o2.calories);
+      }
+    });
+  }
+
+  private void ratingFilter(Double min)
+  {
+    for (Restaurant r : restaurants)
+    {
+      if (r.rating < min && r.rating != 0.0)
+        restaurants.remove(r);
+    }
   }
 
   private void printList(ArrayList<Food> f_list)
@@ -855,8 +894,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   private Double to_double(String s)
   {
-    if (s.isEmpty())
-      return 0.0;
+    if (s.equals(""))
+      return -1.0;
     else
       return Double.valueOf(s);
   }
@@ -890,7 +929,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       des.price = n_val.price;
 
     if (!n_val.phoneDisplay.isEmpty() )
-      des.phoneDisplay= n_val.phoneNumber;
+      des.phoneDisplay= n_val.phoneDisplay;
 
     if (!n_val.categories.isEmpty())
       des.categories = new ArrayList<String>(n_val.categories);
@@ -898,12 +937,16 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   private void print_ret(Restaurant r)
   {
-    System.out.printf("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneNumber, String.valueOf(r.rating));
+    System.out.printf("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneDisplay, String.valueOf(r.rating));
     for (String s : r.categories)
       System.out.print(s + ", ");
     System.out.println();
   }
 
-
+  private void print_food(Food f)
+  {
+    System.out.printf("Name: %s\n\tCal: %f\n\t", f.name, f.calories);
+    print_ret(f.place);
+  }
 }
 //END OF BASIC ACTIVITY CLASS

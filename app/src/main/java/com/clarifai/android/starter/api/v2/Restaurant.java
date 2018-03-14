@@ -6,7 +6,7 @@ public class Restaurant {
     //compare
     public String name;
     public String phoneNumber;
-    public double distanceFromUser;
+    public double distanceFromUser; //in meter
 
     //pull from Nutritionix Location
     public String brand_id;
