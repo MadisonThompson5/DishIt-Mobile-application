@@ -101,21 +101,24 @@
             android:layout_height="match_parent"
             android:text="food info"/>
       </LinearLayout>
-      <LinearLayout
-          android:layout_width="match_parent"
-          android:layout_height="70dp"
-          android:orientation="horizontal">
-        <Button
-            android:id="@+id/NutriAPI"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:text="NutriAPI"/>
-          <Button
-              android:id="@+id/btnFirebaseDB"
-              android:layout_width="100dp"
-              android:layout_height="match_parent"
-              android:text="Firebase DB"/>
-      </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="230dp"
+        android:layout_height="70dp"
+        android:orientation="horizontal">
+
+      <Button
+          android:id="@+id/NutriAPI"
+          android:layout_width="100dp"
+          android:layout_height="match_parent"
+          android:text="NutriAPI" />
+
+      <Button
+          android:id="@+id/btnFirebaseDB"
+          android:layout_width="100dp"
+          android:layout_height="match_parent"
+          android:text="Firebase DB" />
+    </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="70dp"

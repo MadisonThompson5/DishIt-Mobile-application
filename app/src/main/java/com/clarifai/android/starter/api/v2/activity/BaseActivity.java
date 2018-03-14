@@ -101,7 +101,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   //private ListView mDrawerList;
   //private ArrayAdapter<String> mAdapter; //may change
-;
+  ;
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
   private static final String[] PERMISSIONS={
@@ -115,23 +115,23 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     super.onCreate(savedInstanceState);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       RxPermissions.getInstance(this)
-          .request(Manifest.permission.READ_EXTERNAL_STORAGE)
-          .subscribe(new Action1<Boolean>() {
-            @Override public void call(Boolean granted) {
-              if (!granted) {
-                new AlertDialog.Builder(BaseActivity.this)
-                    .setCancelable(false)
-                    .setMessage(R.string.error_external_storage_permission_not_granted)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                      @Override public void onClick(DialogInterface dialog, int which) {
-                        moveTaskToBack(true);
-                        finish();
-                      }
-                    })
-                    .show();
-              }
-            }
-          });
+              .request(Manifest.permission.READ_EXTERNAL_STORAGE)
+              .subscribe(new Action1<Boolean>() {
+                @Override public void call(Boolean granted) {
+                  if (!granted) {
+                    new AlertDialog.Builder(BaseActivity.this)
+                            .setCancelable(false)
+                            .setMessage(R.string.error_external_storage_permission_not_granted)
+                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                              @Override public void onClick(DialogInterface dialog, int which) {
+                                moveTaskToBack(true);
+                                finish();
+                              }
+                            })
+                            .show();
+                  }
+                }
+              });
     }
 
     @SuppressLint("InflateParams") final View wrapper = getLayoutInflater().inflate(R.layout.activity_wrapper, null);
@@ -144,10 +144,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     final Toolbar toolbar = ButterKnife.findById(this, R.id.toolbar);
 
     final Drawer drawer = new DrawerBuilder()
-        .withActivity(this)
-        .withToolbar(toolbar)
-        .withDrawerItems(drawerItems())
-        .build();
+            .withActivity(this)
+            .withToolbar(toolbar)
+            .withDrawerItems(drawerItems())
+            .build();
 
     // Show the "hamburger"
     setSupportActionBar(toolbar);
@@ -178,9 +178,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   @NonNull
   protected List<IDrawerItem> drawerItems() {
     return Arrays.<IDrawerItem>asList(
-        new PrimaryDrawerItem()
-            .withName(R.string.drawer_item_recognize_tags)
-            .withOnDrawerItemClickListener(goToActivityListener(RecognizeConceptsActivity.class))
+            new PrimaryDrawerItem()
+                    .withName(R.string.drawer_item_recognize_tags)
+                    .withOnDrawerItemClickListener(goToActivityListener(RecognizeConceptsActivity.class))
     );
   }
 
@@ -192,7 +192,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   protected abstract int layoutRes();
 
   private Drawer.OnDrawerItemClickListener goToActivityListener(
-      @NonNull final Class<? extends Activity> activityClass) {
+          @NonNull final Class<? extends Activity> activityClass) {
     return new Drawer.OnDrawerItemClickListener() {
       @Override
       public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
@@ -293,12 +293,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   the order of function calls is:
   nutritionixLocationRequest -> parseNutritionixLocations -> linkToYelp -> parseYelpResponse ->
   getMealItems -> nutritionixMealRequest -> parseNutritionixMeal
-
   To get all meal items, nutritionixLocationRequest is called first. After the response is parsed,
   a request is sent to Yelp to get more info on the restaurants. Finally, once all the restaurant
   info is gathered, nutritionixMealRequest is called on every restaurant to create a final list
   containing all the meal items from those restaurants.
-
   Therefore, foods now contains a list of Food objects that has the food's name, calories, and
   restaurant info and can now be used to sort recommendations.
   */
@@ -475,7 +473,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
   }
- 
+
   public void yelpHttpRequest(Restaurant ret, String lat, String lon){
     //encode inc case there are spaces in the restaurant name
     String name = ret.name;
@@ -682,4 +680,3 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
 
 }
-
