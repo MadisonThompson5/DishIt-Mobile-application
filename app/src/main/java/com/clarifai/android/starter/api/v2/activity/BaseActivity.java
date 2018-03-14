@@ -57,6 +57,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,7 @@ import java.util.Map;
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.INTERNET;
+import static android.Manifest.permission.SYSTEM_ALERT_WINDOW;
 
 import com.clarifai.android.starter.api.v2.Food; //import custom Food class
 import com.clarifai.android.starter.api.v2.Restaurant; //import custom Restaurant class
@@ -98,7 +101,10 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   public ArrayList<Food> foods = new ArrayList<Food>();
   public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
   private int restaurantCount = 0;
+  public ArrayList<Restaurant> yelpBusinesses = new ArrayList<Restaurant>();
 
+
+  private ArrayList<String> food_preferences = new ArrayList<String>();
   //private ListView mDrawerList;
   //private ArrayAdapter<String> mAdapter; //may change
 ;
@@ -296,7 +302,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   To get all meal items, nutritionixLocationRequest is called first. After the response is parsed,
   a request is sent to Yelp to get more info on the restaurants. Finally, once all the restaurant
-  info is gathered, nutritionixMealRequest is called on every restaurant to create a final list
+  info is gathered, nutritionixMealRequest is ccalled on every restaurant to reate a final list
   containing all the meal items from those restaurants.
 
   Therefore, foods now contains a list of Food objects that has the food's name, calories, and
@@ -312,6 +318,48 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     return false;
   }
 
+  public void nutritionixLocationRequest(final String lat, final String lon, String distance){
+    String url = "https://trackapi.nutritionix.com/v2/locations?";
+    url += "ll=" + lat + "," + lon + "&";
+    url += "distance=" + distance + "mi";
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                httpResponse = response;
+                String getResponse = response;
+
+                System.out.println("nutritionixLocationRequest\n");
+                Log.e(TAG, "location getResponse" + getResponse);
+                writeToFile("Nutritionix response", getResponse);
+                parseNutritionixLocations(lat, lon);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error: nutritionixLocationRequest");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("x-app-id", nutritionixAppID);
+        params.put("x-app-key", nutritionixAppKey);
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
   public void parseNutritionixLocations(String lat, String lon) {
     //parses Nutritionix location response for name, brand_id, and distance_km
     JSONParser parser = new JSONParser();
@@ -324,16 +372,20 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       for(Object location : locations) {
         JSONObject jsonLocation = (JSONObject)location;
         Restaurant restaurantItem = new Restaurant();
-        restaurantItem.name = jsonLocation.get("name").toString();
+        restaurantItem.name = to_string(jsonLocation, "name");
 
         //ignore restaurant if already in list to avoid duplicates
         if(!checkRestaurantList(restaurantItem.name)) {
-          restaurantItem.brand_id = jsonLocation.get("brand_id").toString();
-          restaurantItem.distanceFromUser = jsonLocation.get("distance_km").toString();
+          restaurantItem.brand_id = to_string(jsonLocation, "brand_id");
+          restaurantItem.distanceFromUser = to_double(to_string(jsonLocation, "distance_km")) * 1000;
+          restaurantItem.phoneNumber = to_string(jsonLocation, "phone");
+          restaurantItem.phoneDisplay = restaurantItem.phoneNumber;
           Log.e(TAG, restaurantItem.name + " " + restaurantItem.brand_id + " " + restaurantItem.distanceFromUser);
           restaurants.add(restaurantItem);
         }
       }
+      System.out.println("End of Nutritionix");
+
       linkToYelp(lat, lon);
     }
     catch(ParseException e) {
@@ -344,12 +396,101 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   public void linkToYelp(String lat, String lon) {
     //iterate through restaurant list and get Yelp info
-    for (Restaurant ret : restaurants) {
-      yelpHttpRequest(ret, lat, lon);
-      ++restaurantCount; //keep track of the number of restaurants to be parsed
-    }
+    yelpHttpRequest(lat, lon);
+
   }
 
+  /*
+  public void yelpHttpRequest(Restaurant ret, String lat, String lon){
+    //encode inc case there are spaces in the restaurant name
+    String name = ret.name;
+    try {
+      name = URLEncoder.encode(name, "UTF-8");
+    } catch (UnsupportedEncodingException ignored) {
+      // Can be safely ignored because UTF-8 is always supported
+    }
+
+    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&";
+    url += "term="+name+"&";
+    url += "latitude="+lat+"&longitude="+lon;
+
+    final String brand_id = ret.brand_id;
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                httpResponse = response;
+                String getResponse = response;
+                Log.e(TAG, "yelp getResponse" + getResponse);
+
+                parseYelpResponse(brand_id);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error YelpHttpRequest");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("Authorization", "Bearer "+apiYelp);
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+  */
+  //Huu modified
+  public void yelpHttpRequest( String lat, String lon){
+    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=50&";
+    url += "radius="+ String.valueOf(2 * 1610);
+    url += "&categories=food+restaurants";
+    url += "&latitude="+lat+"&longitude="+lon;
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                httpResponse = response;
+                String getResponse = response;
+                Log.e(TAG, "yelp getResponse" + getResponse);
+                writeToFile("Yelp respond.txt", getResponse);
+                parseYelpResponse();
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error YelpHttpRequest");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("Authorization", "Bearer "+apiYelp);
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
+  }
+
+  /*
   public void parseYelpResponse(String brand_id) {
     //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
     //first, find restaurant to edit
@@ -397,18 +538,136 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     //if restaurantCount is 0, then all restaurants have been updated
     if(restaurantCount == 0) {
       Log.e(TAG, "Finished getting restaurants, testing: " + restaurants.get(0).categories.toString());
+      System.out.println("Start Meal");
       getMealItems();
     }
+  }
+  */
+  //Huu modified
+  public void parseYelpResponse() {
+    //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
+    //first, find restaurant to edit
+//    for (Restaurant ret : restaurants) {
+//      if (ret.brand_id.equals()) {
+//        //if found, begin adding variables to restaurant
+    JSONParser parser = new JSONParser();
+    try {
+      JSONObject jo = (JSONObject) parser.parse(httpResponse);
+
+      //begin parsing JSON response to Nutritionix location search
+      JSONArray businesses = (JSONArray) jo.get("businesses");
+      for (Object business : businesses) {
+        Restaurant ret = new Restaurant();
+        JSONObject jsonBusiness = (JSONObject) business;
+        ret.closed = (boolean) jsonBusiness.get("is_closed");
+
+        //get address from JSONArray of strings
+        JSONObject jsonLocation = (JSONObject) jsonBusiness.get("location");
+        JSONArray jsonAddress = (JSONArray) jsonLocation.get("display_address");
+        for (Object temp : jsonAddress)
+          ret.address += temp.toString() + ",";
+        ret.address = ret.address.substring(0, ret.address.length() - 1);
+
+        ret.name  = to_string(jsonBusiness, "name");
+        ret.price = to_string(jsonBusiness, "price");
+        ret.phoneNumber = to_string(jsonBusiness,"phone");
+        ret.rating = to_double(to_string(jsonBusiness, "rating"));
+        ret.distanceFromUser = to_double(to_string(jsonBusiness, "distance"));
+        ret.phoneDisplay = to_string(jsonBusiness, "display_phone");
+//        ret.price = jsonBusiness.get("price").toString();
+//        ret.phoneNumber = jsonBusiness.get("phone").toString();
+//        ret.rating = Double.valueOf(jsonBusiness.get("rating").toString());
+//        ret.distanceFromUser = Double.valueOf(jsonBusiness.get("distance").toString());
+//        ret.phoneDisplay = jsonBusiness.get("display_phone").toString();
+
+        //get categories from JSONArray of strings
+        JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
+        for (Object temp : jsonCategories) {
+          JSONObject JSONtemp = (JSONObject) temp;
+          ret.categories.add(JSONtemp.get("title").toString());
+        }
+        yelpBusinesses.add(ret);
+      }
+    } catch (ParseException e) {
+      e.printStackTrace();
+      Log.e(TAG, "ParseException");
+    }
+//    System.out.println("Nutritionix restaurant: " + String.valueOf(restaurants.size()));
+//    System.out.println("Yelp restaurant: " + String.valueOf(yelpBusinesses.size()));
+
+    getMealItems();
   }
 
   public void getMealItems() {
     //iterate through restaurant list and get all menu items
-    for (Restaurant ret : restaurants) {
-      if(!ret.closed) { //don't add restaurant to list if closed
-        nutritionixMealRequest(ret);
+    //Also update information that found on Yelp API
+    int length = restaurants.size();
+
+    for (int i = 0; i < length; i++) {
+      Restaurant temp = restaurants.get(i);
+      int index = is_contained(temp, yelpBusinesses);
+      if (index >= 0)
+      {
+        update_ret(temp, yelpBusinesses.get(index));
+      }
+
+      //filter for rating  < 3.0
+      if (!temp.closed && temp.rating >= 3.0) { //don't add restaurant to list if closed
+        nutritionixMealRequest(temp);
         ++restaurantCount;
       }
+
     }
+
+  }
+
+  public void nutritionixMealRequest(final Restaurant ret){
+    //only get first word of restaurant name
+    String query = ret.name.toLowerCase();
+    if(query.contains(" ")) {
+      query = query.substring(0, query.indexOf(" "));
+    }
+
+    //set url
+    String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
+    url += "query=" + query + "&";
+    url += "brand_ids=" + ret.brand_id;
+
+    RequestQueue queue = Volley.newRequestQueue(this);
+
+    // Request a string response from the provided URL.
+    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+              @Override
+              public void onResponse(String response) {
+                // Display the first 500 characters of the response string.
+                httpResponse = response;
+                String getResponse = response;
+                Log.e(TAG, "meal getResponse" + getResponse);
+                writeToFile("Nutri items.txt", getResponse);
+
+                parseNutritionixMeal(ret);
+              }},
+            new Response.ErrorListener() {
+              @Override
+              public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Log.e(TAG, "Error");
+              }})
+
+    {
+      @Override
+      public Map<String, String> getHeaders () throws AuthFailureError {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("x-app-id", nutritionixAppID);
+        params.put("x-app-key", nutritionixAppKey);
+        params.put("x-remote-user-id", "0");
+        return params;
+      }
+    };
+
+    // Add the request to the RequestQueue.
+    queue.add(stringRequest);
   }
 
   public void parseNutritionixMeal(Restaurant ret) {
@@ -423,11 +682,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       for(Object menuItem : menu) {
         JSONObject jsonItem = (JSONObject)menuItem;
         Food foodItem = new Food();
-        foodItem.name = jsonItem.get("food_name").toString();
-        foodItem.calories = Double.valueOf(jsonItem.get("nf_calories").toString());
+        foodItem.name = to_string(jsonItem, "food_name");
+        foodItem.calories = to_double(to_string(jsonItem,"nf_calories"));
         foodItem.place = ret;
         //only add foodItem if it falls within the user's calorie limit
-        if(foodItem.calories >= (calorieLimit - mealCalories))
+        if(foodItem.calories <= (calorieLimit - mealCalories))
           foods.add(foodItem);
       }
       --restaurantCount;
@@ -443,9 +702,27 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       for(Food food : foods) {
         Log.e(TAG, food.toString() + "\n" + food.place.toString());
       }
+
+      //Huu testing.
+      //food_preferences is for testing only
+      food_preferences.add("Fast Food");
+      food_preferences.add("Sandwiches");
+      food_preferences.add("Pizza");
+
+      sortByCalories(foods);
+      sortByDistance(foods);
+      sortByPreferences(foods, food_preferences);
+
+      for (Food f: foods)
+      {
+        print_food(f);
+        System.out.printf("\tDistance: %f\n", f.place.distanceFromUser);
+      }
+      System.out.println("Finished\n");
+
+
     }
   }
-
   /*
   ********
   Volley requests/API calls
@@ -475,142 +752,8 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
   }
- 
-  public void yelpHttpRequest(Restaurant ret, String lat, String lon){
-    //encode inc case there are spaces in the restaurant name
-    String name = ret.name;
-    try {
-      name = URLEncoder.encode(name, "UTF-8");
-    } catch (UnsupportedEncodingException ignored) {
-      // Can be safely ignored because UTF-8 is always supported
-    }
 
-    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&";
-    url += "term="+name+"&";
-    url += "latitude="+lat+"&longitude="+lon;
 
-    final String brand_id = ret.brand_id;
-    RequestQueue queue = Volley.newRequestQueue(this);
-
-    // Request a string response from the provided URL.
-    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-              @Override
-              public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
-                httpResponse = response;
-                String getResponse = response;
-                Log.e(TAG, "yelp getResponse" + getResponse);
-
-                parseYelpResponse(brand_id);
-              }},
-            new Response.ErrorListener() {
-              @Override
-              public void onErrorResponse(VolleyError error) {
-                error.printStackTrace();
-                Log.e(TAG, "Error");
-              }})
-
-    {
-      @Override
-      public Map<String, String> getHeaders () throws AuthFailureError {
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("Authorization", "Bearer "+apiYelp);
-        return params;
-      }
-    };
-
-    // Add the request to the RequestQueue.
-    queue.add(stringRequest);
-  }
-
-  public void nutritionixLocationRequest(final String lat, final String lon, String distance){
-    String url = "https://trackapi.nutritionix.com/v2/locations?";
-    url += "ll=" + lat + "," + lon + "&";
-    url += "distance=" + distance + "mi";
-
-    RequestQueue queue = Volley.newRequestQueue(this);
-
-    // Request a string response from the provided URL.
-    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-              @Override
-              public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
-                httpResponse = response;
-                String getResponse = response;
-                Log.e(TAG, "location getResponse" + getResponse);
-
-                parseNutritionixLocations(lat, lon);
-              }},
-            new Response.ErrorListener() {
-              @Override
-              public void onErrorResponse(VolleyError error) {
-                error.printStackTrace();
-                Log.e(TAG, "Error");
-              }})
-
-    {
-      @Override
-      public Map<String, String> getHeaders () throws AuthFailureError {
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("x-app-id", nutritionixAppID);
-        params.put("x-app-key", nutritionixAppKey);
-        return params;
-      }
-    };
-
-    // Add the request to the RequestQueue.
-    queue.add(stringRequest);
-  }
-
-  public void nutritionixMealRequest(final Restaurant ret){
-    //only get first word of restaurant name
-    String query = ret.name.toLowerCase();
-    if(query.contains(" ")) {
-      query = query.substring(0, query.indexOf(" "));
-    }
-
-    //set url
-    String url = "https://trackapi.nutritionix.com/v2/search/instant?common=false&";
-    url += "query=" + query + "&";
-    url += "brand_ids=" + ret.brand_id;
-
-    RequestQueue queue = Volley.newRequestQueue(this);
-
-    // Request a string response from the provided URL.
-    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-              @Override
-              public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
-                httpResponse = response;
-                String getResponse = response;
-                Log.e(TAG, "meal getResponse" + getResponse);
-
-                parseNutritionixMeal(ret);
-              }},
-            new Response.ErrorListener() {
-              @Override
-              public void onErrorResponse(VolleyError error) {
-                error.printStackTrace();
-                Log.e(TAG, "Error");
-              }})
-
-    {
-      @Override
-      public Map<String, String> getHeaders () throws AuthFailureError {
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("x-app-id", nutritionixAppID);
-        params.put("x-app-key", nutritionixAppKey);
-        params.put("x-remote-user-id", "0");
-        return params;
-      }
-    };
-
-    // Add the request to the RequestQueue.
-    queue.add(stringRequest);
-  }
 
   @Override
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -680,6 +823,130 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     }
   }
 
+  public void sortByPreferences(ArrayList<Food> fl, final ArrayList<String> preferences){
+    Collections.sort(fl, new Comparator<Food>() {
+      @Override
+      public int compare(Food o1, Food o2) {
+        int c1, c2;
+        c1 = countPreferences(o1, preferences);
+        c2 = countPreferences(o2, preferences);
+        return c2 - c1;
+      }
+    });
+  }
+  private int countPreferences(Food f, ArrayList<String> preferences){
+    int count =0;
+    for (String s : f.place.categories)
+    {
+      if (preferences.contains(s))
+        count++;
+    }
+    return count;
+  }
 
+  public void sortByDistance(ArrayList<Food> fl)
+  {
+    Collections.sort(fl, new Comparator<Food>() {
+      @Override
+      public int compare(Food o1, Food o2) {
+        int d1, d2;
+        d1 = (int)(o1.place.distanceFromUser * 1000);
+        d2 = (int)(o2.place.distanceFromUser * 1000);
+        return d1 -d2;
+      }
+    });
+  }
+
+  public void sortByCalories(ArrayList<Food> fl)
+  {
+    Collections.sort(fl, new Comparator<Food>() {
+      @Override
+      public int compare(Food o1, Food o2) {
+        return (int)(o1.calories - o2.calories);
+      }
+    });
+  }
+
+  private void ratingFilter(Double min)
+  {
+    for (Restaurant r : restaurants)
+    {
+      if (r.rating < min && r.rating != 0.0)
+        restaurants.remove(r);
+    }
+  }
+
+  private void printList(ArrayList<Food> f_list)
+  {
+    for (Food f : f_list){
+      System.out.print(f.name + "\t" + f.place.categories + "\n");
+    }
+    System.out.print('\n');
+  }
+
+  private String to_string(JSONObject oj, String key)
+  {
+    if (oj.get(key) == null)
+      return "";
+    else
+      return oj.get(key).toString();
+  }
+
+  private Double to_double(String s)
+  {
+    if (s.equals(""))
+      return -1.0;
+    else
+      return Double.valueOf(s);
+  }
+
+  private int is_contained(Restaurant r, ArrayList<Restaurant> l)
+  {
+    int length = l.size();
+    for (int i = 0; i < length; i++)
+    {
+      if (r.equals(l.get(i)))
+      {
+        return i;
+      }
+//      else
+//        System.out.printf("%s====%s\n", r.name, l.get(i).name);
+
+    }
+    return -1;
+  }
+
+  private void update_ret(Restaurant des, Restaurant n_val)
+  {
+    des.closed = n_val.closed;
+    des.rating = n_val.rating;
+    des.distanceFromUser = n_val.distanceFromUser;
+
+    if (!n_val.address.isEmpty() )
+      des.address = n_val.address;
+
+    if (!n_val.price.isEmpty() )
+      des.price = n_val.price;
+
+    if (!n_val.phoneDisplay.isEmpty() )
+      des.phoneDisplay= n_val.phoneDisplay;
+
+    if (!n_val.categories.isEmpty())
+      des.categories = new ArrayList<String>(n_val.categories);
+  }
+
+  private void print_ret(Restaurant r)
+  {
+    System.out.printf("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneDisplay, String.valueOf(r.rating));
+    for (String s : r.categories)
+      System.out.print(s + ", ");
+    System.out.println();
+  }
+
+  private void print_food(Food f)
+  {
+    System.out.printf("Name: %s\n\tCal: %f\n\t", f.name, f.calories);
+    print_ret(f.place);
+  }
 }
-
+//END OF BASIC ACTIVITY CLASS
