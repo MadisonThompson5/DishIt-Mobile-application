@@ -41,15 +41,6 @@ public final class RecognizeConceptsActivity extends BaseActivity {
   public static final int MEAL_COUNT = 0;
   private Context context;
 
-  // the list of results that were returned from the API
-  @BindView(R.id.resultsList) RecyclerView resultsList;
-
-  // the view where the image the user selected is displayed
-  @BindView(R.id.image) ImageView imageView;
-
-  // switches between the text prompting the user to hit the FAB, and the loading spinner
-  @BindView(R.id.switcher) ViewSwitcher switcher;
-
   // the FAB that the user clicks to select an image
   @BindView(R.id.fab) View fab;
 
@@ -63,9 +54,6 @@ public final class RecognizeConceptsActivity extends BaseActivity {
 
   @Override protected void onStart() {
     super.onStart();
-
-    resultsList.setLayoutManager(new LinearLayoutManager(this));
-    resultsList.setAdapter(adapter);
   }
 
   @OnClick(R.id.fab)
@@ -104,8 +92,8 @@ public final class RecognizeConceptsActivity extends BaseActivity {
 
         // Use this model to predict, with the image that the user just selected as the input
         return foodModel.predict()
-            .withInputs(ClarifaiInput.forImage(ClarifaiImage.of(imageBytes)))
-            .executeSync();
+                .withInputs(ClarifaiInput.forImage(ClarifaiImage.of(imageBytes)))
+                .executeSync();
       }
 
       @Override protected void onPostExecute(ClarifaiResponse<List<ClarifaiOutput<Concept>>> response) {
@@ -120,7 +108,6 @@ public final class RecognizeConceptsActivity extends BaseActivity {
           return;
         }
         adapter.setData(predictions.get(0).data());
-        imageView.setImageBitmap(BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length));
         Intent intent = new Intent(context, GetMealCalories.class);
         List<Concept> concepts = adapter.getConcepts();
         ArrayList<String> conceptNames = new ArrayList<String>();
@@ -133,9 +120,9 @@ public final class RecognizeConceptsActivity extends BaseActivity {
 
       private void showErrorSnackbar(@StringRes int errorString) {
         Snackbar.make(
-            root,
-            errorString,
-            Snackbar.LENGTH_INDEFINITE
+                root,
+                errorString,
+                Snackbar.LENGTH_INDEFINITE
         ).show();
       }
     }.execute();
@@ -147,8 +134,6 @@ public final class RecognizeConceptsActivity extends BaseActivity {
   private void setBusy(final boolean busy) {
     runOnUiThread(new Runnable() {
       @Override public void run() {
-        switcher.setDisplayedChild(busy ? 1 : 0);
-        imageView.setVisibility(busy ? GONE : VISIBLE);
         fab.setEnabled(!busy);
       }
     });

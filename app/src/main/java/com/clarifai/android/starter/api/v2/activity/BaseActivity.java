@@ -22,9 +22,13 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -694,7 +698,7 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     if(restaurantCount == 0) {
       //if 0, all restaurants have been iterated. Final food list should be finished
       Log.e(TAG, "Finished getting all meal items");
-      for(Food food : foods) {
+      for (Food food : foods) {
         Log.e(TAG, food.toString() + "\n" + food.place.toString());
       }
 
@@ -708,26 +712,38 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
       sortByDistance(foods);
       sortByPreferences(foods, food_preferences);
 
-
-      try {
-        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("test_recommendations.txt", Context.MODE_PRIVATE));
-
-        for (Food f : foods) {
-          String s = String.format("Name: %s\n\tCal: %f\n\t", f.name, f.calories);
-          Restaurant r = f.place;
-          s += String.format("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneDisplay, String.valueOf(r.rating));
-          s += String.format("\n\tDistance: %f\n\n", f.place.distanceFromUser);
-          outputStreamWriter.write(s);
-        }
-        System.out.println("Finished\n");
-        outputStreamWriter.close();
-      }
-      catch (IOException e) {
-        Log.e("Exception", "File write failed: " + e.toString());
-      }
-
-
+      setNewsFeed();
     }
+  }
+
+  public void setNewsFeed() {
+    ScrollView sv = (ScrollView)findViewById(R.id.newsfeed);
+    sv.removeAllViews(); //clear scroll view
+
+    //set linear layout
+    LinearLayout ll = new LinearLayout(this);
+    ll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
+    ll.setOrientation(LinearLayout.VERTICAL);
+    sv.addView(ll);
+
+    TextView[] textViews = new TextView[foods.size()];
+    for (int i = 0; i < foods.size(); ++i) {
+      Food f = foods.get(i);
+      textViews[i] = new TextView(this);
+      String s = String.format("Name: %s\n\tCal: %f\n\t", f.name, f.calories);
+      Restaurant r = f.place;
+      s += String.format("Name:  %s\n\tPhone:  %s\n\tRating:   %s\n\tCategories:  ",r.name, r.phoneDisplay, String.valueOf(r.rating), r.categories.toString());
+      for (String str : r.categories)
+        s += str + ", ";
+      s += String.format("\n\tDistance: %f\n", f.place.distanceFromUser);
+
+      //set layout
+      textViews[i].setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+      textViews[i].setLines(8);
+      textViews[i].setText(s);
+      ll.addView(textViews[i], i, new ViewGroup.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    }
+    System.out.println("Finished\n");
   }
   /*
   ********
