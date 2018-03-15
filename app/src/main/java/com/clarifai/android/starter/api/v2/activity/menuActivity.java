@@ -53,44 +53,75 @@ public class menuActivity extends AppCompatActivity {
                 public void onClick (View v){
                 //Log.e(TAG, "button clicked!");
                 //for each CheckBox, check if it was checked, then add to prefernces
-                switch(v.getId()) {
-                    case R.id.chkAmerican:
                     final CheckBox checkBox = (CheckBox) findViewById(R.id.chkAmerican);
-                    if (checkBox.isChecked()) {
+
+                    if (checkBox.isChecked()&&   !preferences.contains("American")) {
                         preferences.add("Amercian");
                     }
-                    case R.id.chkItalian:
-                        final CheckBox checkBox1 = (CheckBox) findViewById(R.id.chkAmerican);
-                        if (checkBox1.isChecked()) {
+                    final CheckBox checkBox1 = (CheckBox) findViewById(R.id.chkItalian);
+                    if (checkBox1.isChecked() &&!preferences.contains("Italian")) {
                             preferences.add("Italian");
                         }
+                    final CheckBox checkBox2 = (CheckBox) findViewById(R.id.chkChinese);
+                    if (checkBox2.isChecked() && !preferences.contains("Chinese")) {
+                        preferences.add("Chinese");
+                    }
+                    final CheckBox checkBox3 = (CheckBox) findViewById(R.id.chkMexican);
+                    if (checkBox3.isChecked()&& !preferences.contains("Mexican")) {
+                        preferences.add("Mexican");
+                    }
+                    final CheckBox checkBox4 = (CheckBox) findViewById(R.id.chkAsian);
+                    if (checkBox4.isChecked()&& !preferences.contains("Asian")) {
+                        preferences.add("Asian");
+                    }
+                    final CheckBox checkBox5 = (CheckBox) findViewById(R.id.chkBrunch);
+                    if (checkBox5.isChecked()&& !preferences.contains("Brunch")) {
+                        preferences.add("Brunch");
+                    }
+                    final CheckBox checkBox6 = (CheckBox) findViewById(R.id.chkFrench);
+                    if (checkBox6.isChecked()&& !preferences.contains("French")) {
+                        preferences.add("French");
+                    }
+                    final CheckBox checkBox7 = (CheckBox) findViewById(R.id.chkSteakhouse);
+                    if (checkBox7.isChecked()&& !preferences.contains("Steakhouse")) {
+                        preferences.add("Steakhouse");
+                    }
+                    final CheckBox checkBox8 = (CheckBox) findViewById(R.id.chkBurgers);
+                    if (checkBox8.isChecked()&& !preferences.contains("Burgers")) {
+                        preferences.add("Burgers");
+                    }
+                    final CheckBox checkBox9 = (CheckBox) findViewById(R.id.chkPizza);
+                    if (checkBox9.isChecked()&& !preferences.contains("Pizza")) {
+                        preferences.add("Pizza");
+                    }
+                    final CheckBox checkBox10 = (CheckBox) findViewById(R.id.chkOrganic);
+                    if (checkBox10.isChecked()&& !preferences.contains("Organic")) {
+                        preferences.add("Organic");
+                    }
+                    final CheckBox checkBox11 = (CheckBox) findViewById(R.id.chkVeg);
+                    if (checkBox11.isChecked()&& !preferences.contains("Vegetarian/Vegan")) {
+                        preferences.add("Vegetarian/Vegan");
+                    }
 
 
+                    Log.e(TAG, "preferences " + String.valueOf(preferences));
+
+                    EditText edit = (EditText)findViewById(R.id.Favs);
+                    EditText edit1 = (EditText)findViewById(R.id.Dis);
+
+                    String result = edit.getText().toString();
+                    result.split(",");
+                    favorites.add(result);
+
+                    String result1 = edit1.getText().toString();
+                    result1.split(",");
+                    dislikes.add(result1);
+
+                    Log.e(TAG, "favorites " + String.valueOf(favorites));
+                    Log.e(TAG, "dislikes " + String.valueOf(dislikes));
 
                 }
 
-                Log.e(TAG, "preferences " + String.valueOf(preferences));
-
-//                EditText Fav = (EditText) findViewById(R.id.Favorites);
-//                @Override
-//                public boolean onEditorAction(TextView Fav,int i ,  KeyEvent keyevnet)
-//
-//                android.widget.TextView Fav = (android.widget.TextView) findViewById(R.id.Favorites);
-//
-//                String input = Fav.getText().toString();
-//                String favs[] =input.split(",");
-//                for(int i = 0; i < favs.length; ++i) {
-//                    favorites.add(favs[i]);
-//                }
-//                android.widget.TextView Dis = (android.widget.TextView) findViewById(R.id.Favorites);
-//                String input1 = Fav.getText().toString();
-//                String dis[] =input1.split(",");
-//                for(int i = 0; i < dis.length; ++i) {
-//                        dislikes.add(dis[i]);
-//                    }
-
-
-                }
 
             });
 
