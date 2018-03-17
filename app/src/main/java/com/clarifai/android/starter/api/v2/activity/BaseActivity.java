@@ -6,6 +6,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
@@ -25,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -83,7 +88,7 @@ import org.json.simple.parser.ParseException;
 /**
  * A common class to set up boilerplate logic for
  */
-public abstract class BaseActivity extends AppCompatActivity
+public abstract class BaseActivity extends AppCompatActivity implements LocationListener, View.OnClickListener
 {
 
   private static final String INTENT_EXTRA_DRAWER_POSITION = "IntentExtraDrawerPosition";
@@ -113,6 +118,14 @@ public abstract class BaseActivity extends AppCompatActivity
   //private ListView mDrawerList;
   //private ArrayAdapter<String> mAdapter; //may change
   ;
+
+  //gps location
+  protected LocationManager locationManager;
+  protected LocationListener locationListener;
+  protected Context context;
+  private double l_lat, l_lon;
+  private boolean gps_enabled, network_enabled;
+
   private static final int RESULT_PERMS_INITIAL=1339;
   private GoogleApiReceiver googleApiReceiver;
   private static final String[] PERMISSIONS={
@@ -177,6 +190,15 @@ public abstract class BaseActivity extends AppCompatActivity
     textView = (TextView)findViewById(R.id.calorieView);
     textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
     nutritionixLocationRequest("33.645790", "-117.842769", "2");
+
+    findViewById(R.id.locationButton).setOnClickListener(this);
+
+
+    //gps location
+    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    requestLocation();
+
+
   }
 
   @Override
@@ -187,6 +209,48 @@ public abstract class BaseActivity extends AppCompatActivity
     if(googleApiReceiver != null)
       googleApiReceiver.release();
   }
+
+
+
+  //GPS section start*********************************
+  @Override
+  public void onLocationChanged(Location location)
+  //Each time the location changed, do something here
+  {
+    l_lat = location.getLatitude();
+    l_lon = location.getLongitude();
+    System.out.print("On location change: ");
+    System.out.println("Lat: " + Double.valueOf(l_lat).toString() + ", Lon: " + Double.valueOf(l_lon).toString() );
+
+  }
+
+  @Override
+  public void onProviderDisabled(String provider){
+    Log.e("GPS", "disable");
+  }
+  @Override
+  public void onProviderEnabled(String provider){
+    Log.e("GPS", "enable");
+  }
+  @Override
+  public  void onStatusChanged(String provider, int status, Bundle extras){
+    Log.e("GPS", "status changed" );
+  }
+
+  public void requestLocation()
+  {
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED  ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED){
+      locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0L,0.0F,this );
+    }
+
+  }
+
+
+
+  //GPS section end*************************************
 
   @NonNull
   protected List<IDrawerItem> drawerItems() {
@@ -216,6 +280,43 @@ public abstract class BaseActivity extends AppCompatActivity
         return true;
       }
     };
+  }
+
+  @Override
+  public void onClick(View view){
+    switch (view.getId()) {
+      case R.id.locationButton:
+        System.out.println("Button called");
+        //getLocation();
+        requestLocation();
+        break;
+    }
+  }
+
+  public void getLocation()
+  {
+    System.out.println("There is something =====================================");
+//
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED  ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED   )
+    {
+      System.out.println("permission checked");
+//      locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0L,0.0F,this );
+
+      Location l =locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+      l_lat = l.getLatitude();
+      l_lon = l.getLongitude();
+      System.out.println("Got location");
+
+      System.out.println("Lat: " + Double.valueOf(l_lat).toString() + ", Lon: " + Double.valueOf(l_lon).toString() );
+    }
+    else
+    {
+      System.out.println("permission failed");
+
+    }
   }
 
   public void startGoogleApi() {
