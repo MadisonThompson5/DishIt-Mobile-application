@@ -10,7 +10,9 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="57dp">
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar3"
@@ -27,25 +29,20 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical" >
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/textView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TextView" />
-
-                <EditText
-                    android:id="@+id/editText6"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:inputType="textEmailAddress" />
+                    android:text="User Profile"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                    android:textSize="18sp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="References:" />
+                    android:text="Preferences:" />
 
                 <TableLayout
                     android:layout_width="match_parent"
@@ -53,82 +50,95 @@
 
                     <TableRow
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" >
+                        android:layout_height="match_parent">
 
                         <CheckBox
-                            android:id="@+id/checkBox2"
+                            android:id="@+id/chkAmerican"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="American" />
 
                         <CheckBox
+                            android:id="@+id/chkItalian"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Italian" />
 
                         <CheckBox
+                            android:id="@+id/chkChinese"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Chinese" />
 
                         <CheckBox
+                            android:id="@+id/chkMexican"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Mexican" />
 
                     </TableRow>
 
                     <TableRow
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" >
+                        android:layout_height="match_parent">
 
                         <CheckBox
-                            android:id="@+id/checkBox1"
+                            android:id="@+id/chkAsian"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Asian" />
 
                         <CheckBox
+                            android:id="@+id/chkBrunch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Brunch" />
 
                         <CheckBox
+                            android:id="@+id/chkFrench"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="French" />
 
                         <CheckBox
+                            android:id="@+id/chkSteakhouse"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Steakhouse" />
 
                     </TableRow>
 
                     <TableRow
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" >
+                        android:layout_height="match_parent">
 
                         <CheckBox
-                            android:id="@+id/checkBox3"
+                            android:id="@+id/chkBurgers"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Burgers" />
 
                         <CheckBox
+                            android:id="@+id/chkPizza"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CheckBox" />
+                            android:text="Pizza" />
+
+                        <CheckBox
+                            android:id="@+id/chkOrganic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Organic" />
+
+                        <CheckBox
+                            android:id="@+id/chkVeg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Vegeterian/Vegan" />
 
                     </TableRow>
 
                 </TableLayout>
-
-                <TextView
-                    android:id="@+id/textView2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Disliked places:" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -137,12 +147,37 @@
 
                 </LinearLayout>
 
-                <Button
-                    android:id="@+id/button3"
+                <TextView
+                    android:id="@+id/Favorites"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="OK"
-                    />
+                    android:text="Favorites" />
+
+                <EditText
+                    android:id="@+id/Favs"
+                    android:layout_width="match_parent"
+                    android:layout_height="66dp"
+                    android:ems="10"
+                    android:inputType="textAutoCorrect" />
+
+                <TextView
+                    android:id="@+id/Dislikes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Dislikes" />
+
+                <EditText
+                    android:id="@+id/Dis"
+                    android:layout_width="match_parent"
+                    android:layout_height="70dp"
+                    android:ems="10"
+                    android:inputType="textAutoCorrect" />
+
+                <Button
+                    android:id="@+id/okProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save" />
 
 
             </LinearLayout>
