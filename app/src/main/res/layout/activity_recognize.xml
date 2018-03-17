@@ -6,12 +6,6 @@
   >
 
 
-  <ScrollView
-      android:id="@+id/newsfeed"
-      android:layout_width="match_parent"
-      android:layout_height="match_parent">
-  </ScrollView>
-
   <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="match_parent"
@@ -21,10 +15,16 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-    >
+        android:layout_height="match_parent"
+        android:layout_weight="1">
 
+      <TextView
+          android:id="@+id/calorieView"
+          android:layout_width="match_parent"
+          android:layout_height="33dp"
+          android:gravity="top"
+          android:text="TextView"
+          android:textSize="24sp" />
     </FrameLayout>
   </LinearLayout>
 
@@ -51,57 +51,10 @@
       android:onClick="menuButton"
       />
 
-  <LinearLayout
+  <ScrollView
+      android:id="@+id/newsfeed"
       android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_gravity="bottom"
-      android:orientation="vertical">
-      <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:orientation="horizontal">
-        <Button
-            android:id="@+id/btnFoodSearch"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:text="food search"/>
-        <Button
-            android:id="@+id/btnFoodInfo"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:text="food info"/>
-      </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="230dp"
-        android:layout_height="70dp"
-        android:orientation="horizontal">
-
-      <Button
-          android:id="@+id/NutriAPI"
-          android:layout_width="100dp"
-          android:layout_height="match_parent"
-          android:text="NutriAPI" />
-
-      <Button
-          android:id="@+id/btnFirebaseDB"
-          android:layout_width="100dp"
-          android:layout_height="match_parent"
-          android:text="Firebase DB" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:orientation="horizontal">
-      <Button
-          android:id="@+id/YelpAPI"
-          android:layout_width="100dp"
-          android:layout_height="match_parent"
-          android:text="YelpAPI"/>
-
-
-    </LinearLayout>
-
-  </LinearLayout>
+      android:layout_height="match_parent"
+      android:layout_marginTop="40dp"></ScrollView>
 
 </FrameLayout>

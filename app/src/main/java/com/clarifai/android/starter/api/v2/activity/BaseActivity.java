@@ -83,7 +83,7 @@ import org.json.simple.parser.ParseException;
 /**
  * A common class to set up boilerplate logic for
  */
-public abstract class BaseActivity extends AppCompatActivity implements View.OnClickListener
+public abstract class BaseActivity extends AppCompatActivity
 {
 
   private static final String INTENT_EXTRA_DRAWER_POSITION = "IntentExtraDrawerPosition";
@@ -96,10 +96,11 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
   private String nutritionixAppKey = "d8fbcb00e51e12e332824467175de316";
   private Unbinder unbinder;
 
-  public double calorieLimit = 2000;
-
+  public static double calorieLimit = 2000;
   public static double mealCalories = 0;   //total calories of a meal
   public String httpResponse = ""; //response from httpRequests
+
+  private static TextView textView;
 
   //Food items
   public ArrayList<Food> foods = new ArrayList<Food>();
@@ -173,7 +174,9 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     //Draw Side bar
     //mDrawerList = (ListView)findViewById(R.id.navigatorList);
 
-    init();
+    textView = (TextView)findViewById(R.id.calorieView);
+    textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
+    nutritionixLocationRequest("33.645790", "-117.842769", "2");
   }
 
   @Override
@@ -215,48 +218,14 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     };
   }
 
-  @Override
-  public void onClick(View view) {
-    switch (view.getId()) {
-      case R.id.btnFoodSearch:
-        requestForFoodSearch();
-        break;
-      case R.id.btnFoodInfo:
-        requestForFoodInfo();
-        break;
-      case R.id.NutriAPI:
-        //Log.e(TAG, String.valueOf(mealCalories));
-        nutritionixLocationRequest("33.645790", "-117.842769", "2");
-        //nutritionixMealRequest("panda", "513fbc1283aa2dc80c00002e");
-        break;
-      case R.id.btnFirebaseDB:
-        requestForFireBaseDB();
-        break;
-      case R.id.YelpAPI:
-        //yelpHttpRequest("Subway", "33.645942688", "-117.8440322876");
-        break;
-    }
-  }
-
-  public void init() {
-    findViewById(R.id.btnFoodSearch).setOnClickListener(this);
-    findViewById(R.id.btnFoodInfo).setOnClickListener(this);
-    findViewById(R.id.btnFirebaseDB).setOnClickListener(this);
-    findViewById(R.id.YelpAPI).setOnClickListener(this);
-    findViewById(R.id.NutriAPI).setOnClickListener(this);
-
-
-
-//    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
-//      requestPermissions(); // Android 6.0 + (runtime permission)
-//    else
-//      startGoogleApi();
-  }
-
   public void startGoogleApi() {
 
     googleApiReceiver = new GoogleApiReceiver(this);
 
+  }
+
+  public static void UpdateActivity() {
+    textView.setText("Calorie Limit: " + String.valueOf(calorieLimit - mealCalories));
   }
 
   public void requestForFoodSearch() {
@@ -402,54 +371,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
 
   }
 
-  public void yelpHttpRequest(Restaurant ret, String lat, String lon){
-    //encode inc case there are spaces in the restaurant name
-    String name = ret.name;
-    try {
-      name = URLEncoder.encode(name, "UTF-8");
-    } catch (UnsupportedEncodingException ignored) {
-      // Can be safely ignored because UTF-8 is always supported
-    }
-
-    String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=1&";
-    url += "term="+name+"&";
-    url += "latitude="+lat+"&longitude="+lon;
-
-    final String brand_id = ret.brand_id;
-    RequestQueue queue = Volley.newRequestQueue(this);
-
-    // Request a string response from the provided URL.
-    StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-              @Override
-              public void onResponse(String response) {
-                // Display the first 500 characters of the response string.
-                httpResponse = response;
-                String getResponse = response;
-                Log.e(TAG, "yelp getResponse" + getResponse);
-
-                parseYelpResponse(brand_id);
-              }},
-            new Response.ErrorListener() {
-              @Override
-              public void onErrorResponse(VolleyError error) {
-                error.printStackTrace();
-                Log.e(TAG, "Error YelpHttpRequest");
-              }})
-
-    {
-      @Override
-      public Map<String, String> getHeaders () throws AuthFailureError {
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("Authorization", "Bearer "+apiYelp);
-        return params;
-      }
-    };
-
-    // Add the request to the RequestQueue.
-    queue.add(stringRequest);
-  }
-  */
   //Huu modified
   public void yelpHttpRequest( String lat, String lon){
     String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=50&";
@@ -491,59 +412,6 @@ public abstract class BaseActivity extends AppCompatActivity implements View.OnC
     queue.add(stringRequest);
   }
 
-  /*
-  public void parseYelpResponse(String brand_id) {
-    //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
-    //first, find restaurant to edit
-    for (Restaurant ret : restaurants) {
-      if (ret.brand_id.equals(brand_id)) {
-        //if found, begin adding variables to restaurant
-        JSONParser parser = new JSONParser();
-        try {
-          JSONObject jo = (JSONObject) parser.parse(httpResponse);
-
-          //begin parsing JSON response to Nutritionix location search
-          JSONArray businesses = (JSONArray) jo.get("businesses");
-
-          for (Object business : businesses) {
-            JSONObject jsonBusiness = (JSONObject) business;
-            ret.closed = (boolean) jsonBusiness.get("is_closed");
-
-            //get address from JSONArray of strings
-            JSONObject jsonLocation = (JSONObject) jsonBusiness.get("location");
-            JSONArray jsonAddress = (JSONArray) jsonLocation.get("display_address");
-            for (Object temp : jsonAddress)
-              ret.address += temp.toString() + ",";
-            ret.address = ret.address.substring(0, ret.address.length() - 1);
-
-            ret.price = jsonBusiness.get("price").toString();
-            ret.phoneNumber = jsonBusiness.get("display_phone").toString();
-            ret.rating = Double.valueOf(jsonBusiness.get("rating").toString());
-
-            //get categories from JSONArray of strings
-            JSONArray jsonCategories = (JSONArray) jsonBusiness.get("categories");
-            for (Object temp : jsonCategories) {
-              JSONObject JSONtemp = (JSONObject) temp;
-              ret.categories.add(JSONtemp.get("title").toString());
-            }
-          }
-        } catch (ParseException e) {
-          e.printStackTrace();
-          Log.e(TAG, "ParseException");
-        }
-        --restaurantCount; //subtract a restaurant from the count
-        break;
-      }
-    }
-
-    //if restaurantCount is 0, then all restaurants have been updated
-    if(restaurantCount == 0) {
-      Log.e(TAG, "Finished getting restaurants, testing: " + restaurants.get(0).categories.toString());
-      System.out.println("Start Meal");
-      getMealItems();
-    }
-  }
-  */
   //Huu modified
   public void parseYelpResponse() {
     //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories

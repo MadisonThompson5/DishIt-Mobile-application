@@ -75,6 +75,7 @@ public final class RecognizeConceptsActivity extends BaseActivity {
       case MEAL_COUNT:
         double count = data.getDoubleExtra("mealCount", 0);
         BaseActivity.mealCalories += count;
+        BaseActivity.UpdateActivity();
     }
   }
 
