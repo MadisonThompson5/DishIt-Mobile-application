@@ -194,7 +194,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     getLocation();
     textView = (TextView)findViewById(R.id.calorieView);
     textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
-    nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
+    //nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
 
 
     mySwipeRefreshLayout = (SwipeRefreshLayout)this.findViewById(R.id.swiperefresh);
@@ -786,7 +786,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     startActivity(n_intent);
   }
 
-  private void writeToFile(String file_name, String data) {
+  public void writeToFile(String file_name, String data) {
     try {
       OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(file_name, Context.MODE_PRIVATE));
       outputStreamWriter.write(data);
