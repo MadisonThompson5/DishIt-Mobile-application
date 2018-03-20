@@ -19,6 +19,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -107,13 +108,13 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
 
   private static TextView textView;
 
+  private SwipeRefreshLayout mySwipeRefreshLayout;
+
   //Food items
   public ArrayList<Food> foods = new ArrayList<Food>();
   public ArrayList<Restaurant> restaurants = new ArrayList<Restaurant>();
   private int restaurantCount = 0;
   public ArrayList<Restaurant> yelpBusinesses = new ArrayList<Restaurant>();
-
-
   private ArrayList<String> food_preferences = new ArrayList<String>();
   //private ListView mDrawerList;
   //private ArrayAdapter<String> mAdapter; //may change
@@ -189,7 +190,17 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
 
     textView = (TextView)findViewById(R.id.calorieView);
     textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
-    nutritionixLocationRequest("33.645790", "-117.842769", "2");
+    //nutritionixLocationRequest("33.645790", "-117.842769", "2");
+
+    mySwipeRefreshLayout = (SwipeRefreshLayout)this.findViewById(R.id.swiperefresh);
+    mySwipeRefreshLayout.setOnRefreshListener(
+            new SwipeRefreshLayout.OnRefreshListener() {
+              @Override
+              public void onRefresh() {
+                nutritionixLocationRequest("33.645790", "-117.842769", "2");
+              }
+            }
+    );
 
     findViewById(R.id.locationButton).setOnClickListener(this);
 
@@ -710,6 +721,10 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
       ll.addView(textViews[i], i, new ViewGroup.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
     }
     System.out.println("Finished\n");
+
+    if (mySwipeRefreshLayout.isRefreshing()) {
+      mySwipeRefreshLayout.setRefreshing(false);
+    }
   }
   /*
   ********

@@ -3,9 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/clarifai-android-starter-master.iml" filepath="$PROJECT_DIR$/clarifai-android-starter-master.iml" />
       <module fileurl="file://C:\Users\Kerry\Documents\projects\cs125-master\clarifai-android-starter-master.iml" filepath="C:\Users\Kerry\Documents\projects\cs125-master\clarifai-android-starter-master.iml" />
       <module fileurl="file://C:\Users\Kerry\Documents\projects\cs125-master\cs125.iml" filepath="C:\Users\Kerry\Documents\projects\cs125-master\cs125.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cs125-master.iml" filepath="$PROJECT_DIR$/cs125-master.iml" />
       <module fileurl="file://C:\Users\Huu\AndroidStudioProjects\clarifai-android-starter-master\cs125-master.iml" filepath="C:\Users\Huu\AndroidStudioProjects\clarifai-android-starter-master\cs125-master.iml" />
     </modules>
   </component>

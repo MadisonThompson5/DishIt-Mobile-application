@@ -60,10 +60,17 @@
       android:onClick="menuButton"
       />
 
-  <ScrollView
-      android:id="@+id/newsfeed"
+  <android.support.v4.widget.SwipeRefreshLayout
+      android:id="@+id/swiperefresh"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:layout_marginTop="40dp"></ScrollView>
+      android:paddingTop="50dp">
+
+    <ScrollView
+        android:id="@+id/newsfeed"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="40dp"></ScrollView>
+  </android.support.v4.widget.SwipeRefreshLayout>
 
 </FrameLayout>
