@@ -193,7 +193,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
 
     getLocation();
     textView = (TextView)findViewById(R.id.calorieView);
-    textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
+    UpdateActivity();
     //nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
 
 
@@ -322,7 +322,12 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   }
 
   public static void UpdateActivity() {
-    textView.setText("Calorie Limit: " + String.valueOf(calorieLimit - mealCalories));
+    if(calorieLimit - mealCalories >= 0) {
+      textView.setText("Calories Remaining: " + String.valueOf(calorieLimit - mealCalories));
+    }
+    else {
+      textView.setText("Over Limit By: " + String.valueOf(Math.abs(calorieLimit - mealCalories)));
+    }
   }
 
   public void requestForFoodSearch() {
@@ -679,6 +684,14 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     ll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
     ll.setOrientation(LinearLayout.VERTICAL);
     sv.addView(ll);
+
+    //if food list is empty
+    if(foods.size() == 0) {
+      TextView tv = new TextView(this);
+      tv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+      tv.setText("Could not find any food..");
+      ll.addView(tv, new ViewGroup.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    }
 
     TextView[] textViews = new TextView[foods.size()];
     for (int i = 0; i < foods.size(); ++i) {
