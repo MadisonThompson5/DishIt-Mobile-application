@@ -89,8 +89,7 @@ import org.json.simple.parser.ParseException;
 /**
  * A common class to set up boilerplate logic for
  */
-public abstract class BaseActivity extends AppCompatActivity implements LocationListener, View.OnClickListener
-{
+public abstract class BaseActivity extends AppCompatActivity implements LocationListener {
 
   private static final String INTENT_EXTRA_DRAWER_POSITION = "IntentExtraDrawerPosition";
 
@@ -188,28 +187,25 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     //Draw Side bar
     //mDrawerList = (ListView)findViewById(R.id.navigatorList);
 
+    //gps location
+    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    requestLocation();
+
+    getLocation();
     textView = (TextView)findViewById(R.id.calorieView);
     textView.setText("Calorie Limit: " + String.valueOf(calorieLimit));
-    //nutritionixLocationRequest("33.645790", "-117.842769", "2");
+    nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
+
 
     mySwipeRefreshLayout = (SwipeRefreshLayout)this.findViewById(R.id.swiperefresh);
     mySwipeRefreshLayout.setOnRefreshListener(
             new SwipeRefreshLayout.OnRefreshListener() {
               @Override
               public void onRefresh() {
-                nutritionixLocationRequest("33.645790", "-117.842769", "2");
+                nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
               }
             }
     );
-
-    findViewById(R.id.locationButton).setOnClickListener(this);
-
-
-    //gps location
-    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    requestLocation();
-
-
   }
 
   @Override
@@ -293,17 +289,6 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     };
   }
 
-  @Override
-  public void onClick(View view){
-    switch (view.getId()) {
-      case R.id.locationButton:
-        System.out.println("Button called");
-        //getLocation();
-        requestLocation();
-        break;
-    }
-  }
-
   public void getLocation()
   {
     System.out.println("There is something =====================================");
@@ -380,16 +365,18 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   }
 
   /*
-  To get this final list, all that needs to be called is nutritionixLocationRequest. In the program,
-  the order of function calls is:
+  To get recommendations, all that needs to be called is nutritionixLocationRequest.
+  In the program, the order of function calls is:
+
   nutritionixLocationRequest -> parseNutritionixLocations -> linkToYelp -> parseYelpResponse ->
   getMealItems -> nutritionixMealRequest -> parseNutritionixMeal
+
   To get all meal items, nutritionixLocationRequest is called first. After the response is parsed,
   a request is sent to Yelp to get more info on the restaurants. Finally, once all the restaurant
-  info is gathered, nutritionixMealRequest is ccalled on every restaurant to reate a final list
+  info is gathered, nutritionixMealRequest is called on every restaurant to create a final list
   containing all the meal items from those restaurants.
-  Therefore, foods now contains a list of Food objects that has the food's name, calories, and
-  restaurant info and can now be used to sort recommendations.
+
+  After parseNutritonixMeal is complete, it then creates its recommendations and sends them to the app
   */
 
   public boolean checkRestaurantList(String n) {
@@ -419,7 +406,6 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
 
                 System.out.println("nutritionixLocationRequest\n");
                 Log.e(TAG, "location getResponse" + getResponse);
-                writeToFile("Nutritionix response", getResponse);
                 parseNutritionixLocations(lat, lon);
               }},
             new Response.ErrorListener() {
@@ -480,14 +466,13 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   public void linkToYelp(String lat, String lon) {
     //iterate through restaurant list and get Yelp info
     yelpHttpRequest(lat, lon);
-
   }
 
   //Huu modified
   public void yelpHttpRequest( String lat, String lon){
     String url = "https://api.yelp.com/v3/businesses/search?sort_by=distance&limit=50&";
     url += "radius="+ String.valueOf(2 * 1610);
-    url += "&categories=food+restaurants";
+    url += "&categories=food,restaurants";
     url += "&latitude="+lat+"&longitude="+lon;
 
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -501,7 +486,6 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
                 httpResponse = response;
                 String getResponse = response;
                 Log.e(TAG, "yelp getResponse" + getResponse);
-                writeToFile("Yelp respond.txt", getResponse);
                 parseYelpResponse();
               }},
             new Response.ErrorListener() {
@@ -527,15 +511,11 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   //Huu modified
   public void parseYelpResponse() {
     //parses Yelp response for is_closed, display_address, price, display_phone, rating, and categories
-    //first, find restaurant to edit
-//    for (Restaurant ret : restaurants) {
-//      if (ret.brand_id.equals()) {
-//        //if found, begin adding variables to restaurant
     JSONParser parser = new JSONParser();
     try {
       JSONObject jo = (JSONObject) parser.parse(httpResponse);
 
-      //begin parsing JSON response to Nutritionix location search
+      //begin parsing JSON response to Yelp
       JSONArray businesses = (JSONArray) jo.get("businesses");
       for (Object business : businesses) {
         Restaurant ret = new Restaurant();
@@ -587,14 +567,12 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
         update_ret(temp, yelpBusinesses.get(index));
       }
 
-      //filter for rating  < 3.0
+      //filter for rating  < 2.5
       if (!temp.closed && temp.rating >= 2.5 && !temp.categories.contains("Coffee & Tea")) { //don't add restaurant to list if closed
         nutritionixMealRequest(temp);
         ++restaurantCount;
       }
-
     }
-
   }
 
   public void nutritionixMealRequest(final Restaurant ret){
@@ -679,7 +657,6 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
         Log.e(TAG, food.toString() + "\n" + food.place.toString());
       }
 
-      //Huu testing.
       //food_preferences is for testing only
       food_preferences.add("Fast Food");
       food_preferences.add("Sandwiches");
@@ -722,15 +699,11 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     }
     System.out.println("Finished\n");
 
+    //finish refreshing
     if (mySwipeRefreshLayout.isRefreshing()) {
       mySwipeRefreshLayout.setRefreshing(false);
     }
   }
-  /*
-  ********
-  Volley requests/API calls
-  ********
-  */
 
   public void httpRequest(String url){
     RequestQueue queue = Volley.newRequestQueue(this);
@@ -755,8 +728,6 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     // Add the request to the RequestQueue.
     queue.add(stringRequest);
   }
-
-
 
   @Override
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -912,8 +883,8 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
       {
         return i;
       }
-//      else
-//        System.out.printf("%s====%s\n", r.name, l.get(i).name);
+      else
+        System.out.printf("%s====%s\n", r.name, l.get(i).name);
 
     }
     return -1;
