@@ -143,6 +143,12 @@ public class menuActivity extends AppCompatActivity {
             obj.put("favorites", favorites);
             obj.put("dislikes", dislikes);
         }
+        else {
+            //initialize preferences, favorites, and dislikes
+            obj.put("preferences", "[]");
+            obj.put("favorites", "[]");
+            obj.put("dislikes", "[]");
+        }
 
         writeToFile("test_profile", obj.toString(), false);
     }
