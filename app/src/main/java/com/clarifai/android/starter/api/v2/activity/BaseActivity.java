@@ -123,7 +123,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   protected LocationManager locationManager;
   protected LocationListener locationListener;
   protected Context context;
-  private double l_lat, l_lon;
+  private double l_lat = 33.6443, l_lon = -117.841810;
   private boolean gps_enabled, network_enabled;
 
   private static final int RESULT_PERMS_INITIAL=1339;
