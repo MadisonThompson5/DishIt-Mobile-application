@@ -187,6 +187,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     //Draw Side bar
     //mDrawerList = (ListView)findViewById(R.id.navigatorList);
 
+    requestPermissions();
     //gps location
     locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     requestLocation();
@@ -194,7 +195,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     getLocation();
     textView = (TextView)findViewById(R.id.calorieView);
     UpdateActivity();
-    nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
+    //nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
 
 
     mySwipeRefreshLayout = (SwipeRefreshLayout)this.findViewById(R.id.swiperefresh);
