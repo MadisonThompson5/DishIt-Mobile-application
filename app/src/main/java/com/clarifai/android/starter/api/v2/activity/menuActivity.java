@@ -55,7 +55,7 @@ public class menuActivity extends AppCompatActivity {
 
         //create profile if not exist
         if(!fileExists(this, "test_profile"))
-            createProfile("Test Profile", "Male", 170);
+            createProfile("Test Profile", "Male", 170, false);
 
         //load profile
         JSONObject jo = readJsonFile();
@@ -146,6 +146,8 @@ public class menuActivity extends AppCompatActivity {
                     Log.e(TAG, "favorites " + String.valueOf(favorites));
                     Log.e(TAG, "dislikes " + String.valueOf(dislikes));
 
+                    createProfile("Test Profile", "Male", 170, true);
+
                 }
 
 
@@ -164,11 +166,19 @@ public class menuActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void createProfile(String name, String gender, double weight) {
+    public void createProfile(String name, String gender, double weight, boolean addList) {
         JSONObject obj = new JSONObject();
         obj.put("name", name);
         obj.put("gender", gender);
         obj.put("weight", weight);
+
+        if(addList) {
+            //add preferences, favorites, and dislikes
+            obj.put("preferences", preferences.toString());
+            obj.put("favorites", favorites.toString());
+            obj.put("dislikes", dislikes.toString());
+        }
+
         writeToFile("test_profile", obj.toString(), false);
     }
 

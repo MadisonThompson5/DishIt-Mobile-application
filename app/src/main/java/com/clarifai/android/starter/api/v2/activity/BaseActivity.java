@@ -194,7 +194,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
     getLocation();
     textView = (TextView)findViewById(R.id.calorieView);
     UpdateActivity();
-    //nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
+    nutritionixLocationRequest(String.valueOf(l_lat), String.valueOf(l_lon), "2");
 
 
     mySwipeRefreshLayout = (SwipeRefreshLayout)this.findViewById(R.id.swiperefresh);
@@ -316,9 +316,7 @@ public abstract class BaseActivity extends AppCompatActivity implements Location
   }
 
   public void startGoogleApi() {
-
     googleApiReceiver = new GoogleApiReceiver(this);
-
   }
 
   public static void UpdateActivity() {
